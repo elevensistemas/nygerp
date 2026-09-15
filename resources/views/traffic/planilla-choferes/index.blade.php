@@ -689,9 +689,7 @@
     let isSaving = false;
     let savePending = false;
     let pendingSilentMode = true;
-    let recordsByBody = {};
     let recordsCountByBody = {};
-    let renderedBodies = {};
 
     function showAutosaveStatus(state) {
       const $status = $('#autosaveStatus');
@@ -1119,7 +1117,7 @@
       }
 
       const rowHtml = `
-        <tr id="${uniqueId}" class="row-fade-in" data-db-id="${recordId}">
+        <tr id="${uniqueId}" class="row-fade-in ${data ? '' : 'is-dirty'}" data-db-id="${recordId}">
           <td>
             <div class="d-flex gap-1 align-items-center">
               <button type="button" class="btn-remove-row text-danger" onclick="removeRow('${uniqueId}')" title="Eliminar fila">
@@ -2400,6 +2398,8 @@
         if (result.isConfirmed) {
           const newValue = result.value || '';
           $hiddenInput.val(newValue);
+          $row.addClass('is-dirty');
+          triggerAutosave();
           
           // Update button icon color to show active status
           const $btn = $hiddenInput.siblings('.btn-comment');
@@ -2480,7 +2480,9 @@
             url: '{{ route("traffic.planilla-choferes.clean-duplicates") }}',
             type: 'POST',
             data: {
-              _token: $('meta[name="csrf-token"]').attr('content')
+              _token: $('meta[name="csrf-token"]').attr('content'),
+              fecha_desde: $('input[name="fecha_desde"]').val(),
+              fecha_hasta: $('input[name="fecha_hasta"]').val()
             },
             dataType: 'json',
             success: function (res) {
@@ -2531,8 +2533,23 @@
 
       const rows = [];
       let isValid = true;
+      const $dirtyRows = $('.sheetTableBody tr.is-dirty');
 
-      $('.sheetTableBody tr').each(function () {
+      if ($dirtyRows.length === 0 && deletedIds.length === 0) {
+        isSaving = false;
+        if (isSilent) {
+          showAutosaveStatus('saved');
+        }
+        if (savePending) {
+          const nextSilent = pendingSilentMode;
+          savePending = false;
+          pendingSilentMode = true;
+          saveAll(nextSilent);
+        }
+        return;
+      }
+
+      $dirtyRows.each(function () {
         const $row = $(this);
         const dbId = $row.attr('data-db-id');
         
@@ -2662,6 +2679,7 @@
       })
       .then(data => {
         deletedIds = [];
+        $dirtyRows.removeClass('is-dirty');
 
         if (data.saved_rows) {
           data.saved_rows.forEach(item => {

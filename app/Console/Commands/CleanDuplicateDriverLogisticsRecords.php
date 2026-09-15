@@ -54,14 +54,18 @@ class CleanDuplicateDriverLogisticsRecords extends Command
      *
      * @param string|null $specificDate
      * @param bool $isDryRun
+     * @param string|null $fechaDesde
+     * @param string|null $fechaHasta
      * @return array
      */
-    public static function cleanDuplicates(?string $specificDate = null, bool $isDryRun = false): array
+    public static function cleanDuplicates(?string $specificDate = null, bool $isDryRun = false, ?string $fechaDesde = null, ?string $fechaHasta = null): array
     {
         $query = DriverLogisticsRecord::query();
 
         if ($specificDate) {
             $query->whereDate('fecha', $specificDate);
+        } elseif ($fechaDesde && $fechaHasta) {
+            $query->whereBetween('fecha', [$fechaDesde, $fechaHasta]);
         }
 
         $allRecords = $query->orderBy('fecha')->orderBy('id')->get();

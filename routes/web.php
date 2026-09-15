@@ -195,7 +195,6 @@ Route::middleware(['auth', 'terms.accepted', 'transportista.restrict', 'readonly
         Route::get('/planilla-choferes/conceptos', [DriverLogisticsRecordController::class, 'getConcepts'])->name('planilla-choferes.concepts');
         Route::get('/planilla-choferes/transportistas-list', [DriverLogisticsRecordController::class, 'getCarriers'])->name('planilla-choferes.carriers-list');
         Route::post('/planilla-choferes/clean-duplicates', [DriverLogisticsRecordController::class, 'cleanDuplicates'])->name('planilla-choferes.clean-duplicates');
-        Route::get('/planilla-choferes/clean-duplicates-run', [DriverLogisticsRecordController::class, 'cleanDuplicatesGet'])->name('planilla-choferes.clean-duplicates-get');
         Route::delete('/planilla-choferes/{record}', [DriverLogisticsRecordController::class, 'destroy'])->name('planilla-choferes.destroy');
         Route::get('/delivery-reasons', [DeliveryReasonController::class, 'index'])->name('delivery-reasons.index');
         Route::post('/delivery-reasons', [DeliveryReasonController::class, 'store'])->name('delivery-reasons.store');
@@ -350,33 +349,33 @@ Route::middleware(['auth', 'terms.accepted', 'admin', 'readonly.block'])->group(
 
 
 
-Route::get('/__clear', function (Request $request) {
-    $key = $request->query('key');
+Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/__clear', function (Request $request) {
+        $key = $request->query('key');
+        $expectedKey = env('MAINTENANCE_KEY', config('app.maintenance_key'));
 
-    // Mejor usa config('app.maintenance_key') si lo definiste en config/app.php
-    if ($key !== "Trinitotolueno2015") {
-        abort(403, 'Forbidden');
-    }
+        if ($expectedKey && $key !== $expectedKey) {
+            abort(403, 'Forbidden');
+        }
 
-    Artisan::call('config:clear');
-    Artisan::call('cache:clear');
-    Artisan::call('view:clear');
-    Artisan::call('storage:link');
+        Artisan::call('config:clear');
+        Artisan::call('cache:clear');
+        Artisan::call('view:clear');
+        Artisan::call('storage:link');
 
-    // Opcional: también route:clear si corresponde a tu despliegue
-    // Artisan::call('route:clear');
+        return response('ok', 200);
+    })->middleware('throttle:2,1');
 
-    return response('ok', 200);
-})->middleware('throttle:2,1'); // rate limit: 2 req por minuto
+    Route::get('/__migrate', function (Request $request) {
+        $key = $request->input('key');
+        $expectedKey = env('MAINTENANCE_KEY', config('app.maintenance_key'));
 
-Route::get('/__migrate', function (Request $request) {
-    $key = $request->input('key');
+        if ($expectedKey && $key !== $expectedKey) {
+            abort(403, 'Forbidden');
+        }
 
-    if ($key != "Trinitotolueno2015#") {
-        //abort(403, 'Forbidden');
-    }
+        Artisan::call('migrate', ['--force' => true]);
 
-    Artisan::call('migrate', ['--force' => true]);
-
-    return response(Artisan::output(), 200);
-})->middleware('throttle:2,1'); // rate limit: 2 req por minuto
+        return response(Artisan::output(), 200);
+    })->middleware('throttle:2,1');
+});

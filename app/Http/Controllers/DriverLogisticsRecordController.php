@@ -481,9 +481,11 @@ class DriverLogisticsRecordController extends Controller
         }
 
         $fecha = $request->input('fecha');
+        $fechaDesde = $request->input('fecha_desde');
+        $fechaHasta = $request->input('fecha_hasta');
         $isDryRun = filter_var($request->input('dry_run', false), FILTER_VALIDATE_BOOLEAN);
 
-        $result = \App\Console\Commands\CleanDuplicateDriverLogisticsRecords::cleanDuplicates($fecha, $isDryRun);
+        $result = \App\Console\Commands\CleanDuplicateDriverLogisticsRecords::cleanDuplicates($fecha, $isDryRun, $fechaDesde, $fechaHasta);
 
         return response()->json([
             'success' => true,
@@ -492,61 +494,6 @@ class DriverLogisticsRecordController extends Controller
                 : "Limpieza realizada con éxito. Grupos corregidos: {$result['duplicate_groups_count']}. Registros duplicados eliminados: {$result['total_deleted_count']}.",
             'data' => $result,
         ]);
-    }
-
-    public function cleanDuplicatesGet(Request $request)
-    {
-        $user = auth()->user();
-        if ($user && $user->isTransportista() && ! $user->isAdminOrSuper()) {
-            abort(403, 'Acceso no autorizado.');
-        }
-
-        $fecha = $request->input('fecha');
-        $isDryRun = filter_var($request->input('dry_run', false), FILTER_VALIDATE_BOOLEAN);
-
-        $result = \App\Console\Commands\CleanDuplicateDriverLogisticsRecords::cleanDuplicates($fecha, $isDryRun);
-
-        $statusText = $isDryRun ? 'Simulación Realizada (Dry Run)' : 'Limpieza de Duplicados Ejecutada Exitosamente';
-        $alertClass = $isDryRun ? 'warning' : 'success';
-        $backUrl = route('traffic.planilla-choferes.index');
-
-        $html = "
-        <!DOCTYPE html>
-        <html lang='es'>
-        <head>
-            <meta charset='UTF-8'>
-            <title>Limpieza de Registros Duplicados</title>
-            <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css' rel='stylesheet'>
-        </head>
-        <body class='bg-light py-5'>
-            <div class='container' style='max-width: 650px;'>
-                <div class='card shadow border-0'>
-                    <div class='card-header bg-{$alertClass} text-white py-3'>
-                        <h4 class='mb-0 fw-bold'><i class='fa-solid fa-broom me-2'></i>{$statusText}</h4>
-                    </div>
-                    <div class='card-body p-4'>
-                        <p class='lead mb-4'>Proceso completado para los registros de rendición de la planilla de choferes.</p>
-                        <div class='list-group mb-4'>
-                            <div class='list-group-item d-flex justify-content-between align-items-center'>
-                                <span>Grupos de registros duplicados encontrados</span>
-                                <span class='badge bg-primary rounded-pill fs-6'>{$result['duplicate_groups_count']}</span>
-                            </div>
-                            <div class='list-group-item d-flex justify-content-between align-items-center'>
-                                <span>Total de registros duplicados eliminados</span>
-                                <span class='badge bg-danger rounded-pill fs-6'>{$result['total_deleted_count']}</span>
-                            </div>
-                        </div>
-                        <div class='d-grid gap-2'>
-                            <a href='{$backUrl}' class='btn btn-primary btn-lg'>Volver a Planilla de Choferes</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </body>
-        </html>
-        ";
-
-        return response($html);
     }
 
     public function destroy(DriverLogisticsRecord $record): JsonResponse
