@@ -8,7 +8,10 @@
     <h1 class="h3 mb-1">Recibos de Liquidacion</h1>
     <p class="text-muted mb-0">Gestion de recibos importados y conciliados para choferes transportistas.</p>
   </div>
-  <div class="page-actions">
+  <div class="page-actions d-flex align-items-center gap-2">
+    <a href="{{ asset('manuales/instructivo_pago_choferes.pdf') }}" target="_blank" class="btn btn-outline-info d-inline-flex align-items-center justify-content-center shadow-sm" title="¿Cómo usar? Ver instructivo (PDF)" style="width: 38px; height: 38px; border-radius: 50%;">
+      <i class="fa-solid fa-circle-question fs-5"></i>
+    </a>
     <a class="btn btn-outline-primary" href="{{ route('pago-choferes.import.create') }}">Importar Excel de Trafico</a>
     <a class="btn btn-primary" id="createPlanillaFromSelection" href="{{ route('pago-choferes.planillas.create') }}">Crear Planilla</a>
   </div>

@@ -256,7 +256,10 @@
     <h1 class="h3 mb-1">Detalle de recibo #{{ $recibo->id }}</h1>
     <p class="text-muted mb-0">Visualizacion de liquidacion y control administrativo del comprobante.</p>
   </div>
-  <div class="page-actions">
+  <div class="page-actions d-flex align-items-center gap-2">
+    <a href="{{ asset('manuales/instructivo_pago_choferes.pdf') }}" target="_blank" class="btn btn-outline-info d-inline-flex align-items-center justify-content-center shadow-sm" title="¿Cómo usar? Ver instructivo (PDF)" style="width: 38px; height: 38px; border-radius: 50%;">
+      <i class="fa-solid fa-circle-question fs-5"></i>
+    </a>
     <a class="btn btn-outline-secondary" href="{{ route('pago-choferes.recibos.index') }}">Volver</a>
     <a class="btn btn-outline-primary" target="_blank" href="{{ route('pago-choferes.recibos.print', $recibo) }}">Imprimir</a>
     @if($canRecalculateReceipt)

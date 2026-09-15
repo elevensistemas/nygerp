@@ -9,7 +9,10 @@
       <p class="text-muted mb-0">Estado: {{ $planilla->estado }} | Total: $
         {{ number_format((float) $planilla->total, 2, ',', '.') }}</p>
     </div>
-    <div class="page-actions d-flex gap-2">
+    <div class="page-actions d-flex align-items-center gap-2">
+      <a href="{{ asset('manuales/instructivo_pago_choferes.pdf') }}" target="_blank" class="btn btn-outline-info d-inline-flex align-items-center justify-content-center shadow-sm" title="¿Cómo usar? Ver instructivo (PDF)" style="width: 38px; height: 38px; border-radius: 50%;">
+        <i class="fa-solid fa-circle-question fs-5"></i>
+      </a>
       <a class="btn btn-outline-secondary" href="{{ route('pago-choferes.planillas.index') }}">Volver</a>
       <a class="btn btn-outline-primary" target="_blank"
         href="{{ route('pago-choferes.planillas.print', $planilla) }}">Imprimir</a>

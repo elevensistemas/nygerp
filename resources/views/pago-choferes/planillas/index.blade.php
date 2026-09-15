@@ -7,7 +7,10 @@
   <div class="title-block">
     <h1 class="h3 mb-1">Planillas de Pago a Choferes</h1>
   </div>
-  <div class="page-actions d-flex gap-2">
+  <div class="page-actions d-flex align-items-center gap-2">
+    <a href="{{ asset('manuales/instructivo_pago_choferes.pdf') }}" target="_blank" class="btn btn-outline-info d-inline-flex align-items-center justify-content-center shadow-sm" title="¿Cómo usar? Ver instructivo (PDF)" style="width: 38px; height: 38px; border-radius: 50%;">
+      <i class="fa-solid fa-circle-question fs-5"></i>
+    </a>
     @if(auth()->user() && auth()->user()->isAdminOrSuper())
       <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#testSantanderModal">
         Simulador Santander

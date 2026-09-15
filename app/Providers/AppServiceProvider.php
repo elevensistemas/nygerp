@@ -28,5 +28,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         Paginator::useBootstrap();
+        \App\Models\DriverLogisticsRecord::observe(\App\Observers\DriverLogisticsRecordObserver::class);
     }
 }

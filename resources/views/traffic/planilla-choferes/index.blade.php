@@ -11,6 +11,9 @@
   <div class="d-flex align-items-center gap-3">
     <!-- Contenedor de estado de autoguardado -->
     <div id="autosaveStatus" class="small fw-semibold" style="display: none;"></div>
+    <a href="{{ asset('manuales/instructivo_planilla_diaria_choferes.pdf') }}" target="_blank" class="btn btn-outline-info d-inline-flex align-items-center justify-content-center shadow-sm" title="¿Cómo usar? Ver instructivo (PDF)" style="width: 38px; height: 38px; border-radius: 50%;">
+      <i class="fa-solid fa-circle-question fs-5"></i>
+    </a>
     <button type="button" class="btn btn-outline-warning text-dark fw-semibold d-flex align-items-center gap-2 shadow-sm" onclick="runCleanDuplicates()" title="Identificar y eliminar duplicados preexistentes">
       <i class="fa-solid fa-broom"></i>
       <span>Limpiar Duplicados</span>
@@ -2469,9 +2472,25 @@
           $row.removeClass('table-danger');
         }
 
+        const parseNumOrNull = function($fieldInput) {
+          const rawVal = $fieldInput.val();
+          if (rawVal === undefined || rawVal === null || String(rawVal).trim() === '') {
+            return null;
+          }
+          const parsed = parseInt(rawVal);
+          return isNaN(parsed) ? null : parsed;
+        };
+
+        const rawEntregados = parseNumOrNull($row.find('[data-field="entregados"]'));
+        const rawParadas = parseNumOrNull($row.find('[data-field="paradas"]'));
+        const rawPaquetes = parseNumOrNull($row.find('[data-field="paquetes"]'));
+        const entregadosStr = String($row.find('[data-field="entregados"]').val() || '').trim();
+
         rows.push({
           id: dbId ? parseInt(dbId) : null,
           temp_id: $row.attr('id'),
+          is_autosave: isSilent,
+          explicit_zero_entregados: (entregadosStr === '0'),
           fecha: fecha,
           transportista_id: transportista_id ? parseInt(transportista_id) : null,
           transporte_id: $row.find('[data-field="transporte_id"]').val() ? parseInt($row.find('[data-field="transporte_id"]').val()) : null,
@@ -2480,22 +2499,22 @@
           ruta: $row.find('[data-field="ruta"]').val(),
           numero: $row.find('[data-field="numero"]').val(),
           zona: $row.find('[data-field="zona"]').val(),
-          paradas: parseInt($row.find('[data-field="paradas"]').val() || 0),
-          paquetes: parseInt($row.find('[data-field="paquetes"]').val() || 0),
-          entregados: parseInt($row.find('[data-field="entregados"]').val() || 0),
-          deja_en_svc: parseInt($row.find('[data-field="deja_en_svc"]').val() || 0),
-          paq_no_colectado: parseInt($row.find('[data-field="paq_no_colectado"]').val() || 0),
-          nadie_en_domicilio: parseInt($row.find('[data-field="nadie_en_domicilio"]').val() || 0),
-          negocio_cerrado: parseInt($row.find('[data-field="negocio_cerrado"]').val() || 0),
-          qr: parseInt($row.find('[data-field="qr"]').val() || 0),
-          fuera_de_zona: parseInt($row.find('[data-field="fuera_de_zona"]').val() || 0),
-          zona_inaccesible: parseInt($row.find('[data-field="zona_inaccesible"]').val() || 0),
-          rechazado: parseInt($row.find('[data-field="rechazado"]').val() || 0),
-          sin_visitar: parseInt($row.find('[data-field="sin_visitar"]').val() || 0),
-          fraude: parseInt($row.find('[data-field="fraude"]').val() || 0),
-          paquete_perdido: parseInt($row.find('[data-field="paquete_perdido"]').val() || 0),
-          paquete_danado: parseInt($row.find('[data-field="paquete_danado"]').val() || 0),
-          paquete_robado: parseInt($row.find('[data-field="paquete_robado"]').val() || 0),
+          paradas: rawParadas,
+          paquetes: rawPaquetes,
+          entregados: rawEntregados,
+          deja_en_svc: parseNumOrNull($row.find('[data-field="deja_en_svc"]')) || 0,
+          paq_no_colectado: parseNumOrNull($row.find('[data-field="paq_no_colectado"]')) || 0,
+          nadie_en_domicilio: parseNumOrNull($row.find('[data-field="nadie_en_domicilio"]')) || 0,
+          negocio_cerrado: parseNumOrNull($row.find('[data-field="negocio_cerrado"]')) || 0,
+          qr: parseNumOrNull($row.find('[data-field="qr"]')) || 0,
+          fuera_de_zona: parseNumOrNull($row.find('[data-field="fuera_de_zona"]')) || 0,
+          zona_inaccesible: parseNumOrNull($row.find('[data-field="zona_inaccesible"]')) || 0,
+          rechazado: parseNumOrNull($row.find('[data-field="rechazado"]')) || 0,
+          sin_visitar: parseNumOrNull($row.find('[data-field="sin_visitar"]')) || 0,
+          fraude: parseNumOrNull($row.find('[data-field="fraude"]')) || 0,
+          paquete_perdido: parseNumOrNull($row.find('[data-field="paquete_perdido"]')) || 0,
+          paquete_danado: parseNumOrNull($row.find('[data-field="paquete_danado"]')) || 0,
+          paquete_robado: parseNumOrNull($row.find('[data-field="paquete_robado"]')) || 0,
           comentario_perdido: $row.find('[data-field="comentario_perdido"]').val() || null,
           comentario_danado: $row.find('[data-field="comentario_danado"]').val() || null,
           comentario_robado: $row.find('[data-field="comentario_robado"]').val() || null,

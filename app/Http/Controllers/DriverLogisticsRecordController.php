@@ -7,6 +7,7 @@ use App\Models\Location;
 use App\Models\TrafficZone;
 use App\Models\Transporte;
 use App\Models\Transportista;
+use App\Services\DriverPayments\DriverLogisticsAutoSyncService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -121,8 +122,35 @@ class DriverLogisticsRecordController extends Controller
             'deleted_ids.*' => ['integer'],
         ]);
 
+        DriverLogisticsAutoSyncService::$isSyncing = true;
+
         try {
-            $savedRows = DB::transaction(function () use ($request, $user) {
+            $deletedIds = $request->input('deleted_ids', []);
+            $savedRecordIds = [];
+
+            // Pre-fetch caches for logging to eliminate N+1 queries during loop
+            $carrierCache = [];
+            $transporteCache = [];
+
+            $getCarrierName = function ($cId) use (&$carrierCache) {
+                if (!$cId) return 'N/A';
+                if (!isset($carrierCache[$cId])) {
+                    $c = Transportista::find($cId);
+                    $carrierCache[$cId] = $c ? $c->name : 'N/A';
+                }
+                return $carrierCache[$cId];
+            };
+
+            $getTransporteName = function ($tId) use (&$transporteCache) {
+                if (!$tId) return 'N/A';
+                if (!isset($transporteCache[$tId])) {
+                    $t = Transporte::find($tId);
+                    $transporteCache[$tId] = $t ? ($t->alias ?: $t->license_plate) : 'N/A';
+                }
+                return $transporteCache[$tId];
+            };
+
+            $savedRows = DB::transaction(function () use ($request, $user, &$savedRecordIds, $getCarrierName, $getTransporteName) {
                 $rows = $request->input('rows', []);
                 $deletedIds = $request->input('deleted_ids', []);
                 
@@ -134,7 +162,7 @@ class DriverLogisticsRecordController extends Controller
                     foreach ($deletedIds as $delId) {
                         $record = DriverLogisticsRecord::find($delId);
                         if ($record) {
-                            $carrierName = $record->transportista ? $record->transportista->name : 'N/A';
+                            $carrierName = $getCarrierName($record->transportista_id);
                             $fechaStr = $record->fecha instanceof Carbon ? $record->fecha->format('Y-m-d') : substr($record->fecha, 0, 10);
                             \App\Models\DriverLogisticsRecordLog::create([
                                 'driver_logistics_record_id' => $delId,
@@ -150,12 +178,87 @@ class DriverLogisticsRecordController extends Controller
                 // Save or update records
                 foreach ($rows as $rowData) {
                     $id = $rowData['id'] ?? null;
+                    $isAutosave = ! empty($rowData['is_autosave']);
+                    $explicitZeroEntregados = ! empty($rowData['explicit_zero_entregados']);
+
+                    $record = $id ? DriverLogisticsRecord::find($id) : null;
+
+                    if (! $record && empty($id)) {
+                        // Deduplication fallback: check if a record with matching key attributes was created very recently (e.g. concurrent autosave)
+                        $recentMatchQuery = DriverLogisticsRecord::query()
+                            ->where('fecha', $rowData['fecha'])
+                            ->where('transportista_id', $rowData['transportista_id']);
+
+                        if (isset($rowData['traffic_zone_id']) && $rowData['traffic_zone_id']) {
+                            $recentMatchQuery->where('traffic_zone_id', $rowData['traffic_zone_id']);
+                        } else {
+                            $recentMatchQuery->whereNull('traffic_zone_id');
+                        }
+
+                        if (isset($rowData['transporte_id']) && $rowData['transporte_id']) {
+                            $recentMatchQuery->where('transporte_id', $rowData['transporte_id']);
+                        } else {
+                            $recentMatchQuery->whereNull('transporte_id');
+                        }
+
+                        if (isset($rowData['ruta']) && $rowData['ruta'] !== '') {
+                            $recentMatchQuery->where('ruta', $rowData['ruta']);
+                        } else {
+                            $recentMatchQuery->where(function ($q) {
+                                $q->whereNull('ruta')->orWhere('ruta', '');
+                            });
+                        }
+
+                        if (isset($rowData['numero']) && $rowData['numero'] !== '') {
+                            $recentMatchQuery->where('numero', $rowData['numero']);
+                        } else {
+                            $recentMatchQuery->where(function ($q) {
+                                $q->whereNull('numero')->orWhere('numero', '');
+                            });
+                        }
+
+                        if (! empty($usedRecordIdsInBatch)) {
+                            $recentMatchQuery->whereNotIn('id', $usedRecordIdsInBatch);
+                        }
+
+                        $recentMatchQuery->where('created_at', '>=', Carbon::now()->subMinutes(2));
+
+                        $recentMatch = $recentMatchQuery->latest('id')->first();
+                        if ($recentMatch) {
+                            $record = $recentMatch;
+                        }
+                    }
+
+                    // Parse raw numeric values
+                    $rawParadas = array_key_exists('paradas', $rowData) ? $rowData['paradas'] : null;
+                    $rawPaquetes = array_key_exists('paquetes', $rowData) ? $rowData['paquetes'] : null;
+                    $rawEntregados = array_key_exists('entregados', $rowData) ? $rowData['entregados'] : null;
+
+                    // Resolve paradas
+                    if ($record && $rawParadas === null) {
+                        $paradas = (int) ($record->paradas ?? 0);
+                    } else {
+                        $paradas = (int) ($rawParadas ?? 0);
+                    }
+
+                    // Resolve paquetes
+                    if ($record && $rawPaquetes === null) {
+                        $paquetes = (int) ($record->paquetes ?? 0);
+                    } else {
+                        $paquetes = (int) ($rawPaquetes ?? 0);
+                    }
+
+                    // Resolve entregados with anti-erasure protection
+                    if ($record && $rawEntregados === null) {
+                        $entregados = (int) ($record->entregados ?? 0);
+                    } elseif ($record && (int)$rawEntregados === 0 && $isAutosave && (int)$record->entregados > 0 && ! $explicitZeroEntregados) {
+                        // Protect existing entregados value from being wiped to 0 during background autosaves
+                        $entregados = (int) $record->entregados;
+                    } else {
+                        $entregados = (int) ($rawEntregados ?? 0);
+                    }
                     
-                    // Parse values with fallback defaults
-                    $paquetes = (int) ($rowData['paquetes'] ?? 0);
-                    $entregados = (int) ($rowData['entregados'] ?? 0);
-                    
-                    if (isset($rowData['porcentaje']) && $rowData['porcentaje'] !== '') {
+                    if (isset($rowData['porcentaje']) && $rowData['porcentaje'] !== '' && $rowData['porcentaje'] !== null) {
                         $porcentaje = (float) $rowData['porcentaje'];
                     } else {
                         $porcentaje = 0;
@@ -173,7 +276,7 @@ class DriverLogisticsRecordController extends Controller
                         'ruta' => ($rowData['ruta'] ?? null) ?: null,
                         'numero' => ($rowData['numero'] ?? null) ?: null,
                         'zona' => ($rowData['zona'] ?? null) ?: null,
-                        'paradas' => (int) ($rowData['paradas'] ?? 0),
+                        'paradas' => $paradas,
                         'paquetes' => $paquetes,
                         'entregados' => $entregados,
                         'deja_en_svc' => (int) ($rowData['deja_en_svc'] ?? 0),
@@ -198,57 +301,7 @@ class DriverLogisticsRecordController extends Controller
                         'zona_lejana' => filter_var($rowData['zona_lejana'] ?? false, FILTER_VALIDATE_BOOLEAN),
                         'observacion' => ($rowData['observacion'] ?? null) ?: null,
                         'updated_by' => $user ? $user->id : null,
-                    ];
-
-                    $record = $id ? DriverLogisticsRecord::find($id) : null;
-
-                    if (! $record && empty($id)) {
-                        // Deduplication fallback: check if a record with matching key attributes was created very recently (e.g. concurrent autosave)
-                        $recentMatchQuery = DriverLogisticsRecord::query()
-                            ->where('fecha', $payload['fecha'])
-                            ->where('transportista_id', $payload['transportista_id']);
-
-                        if (isset($payload['traffic_zone_id'])) {
-                            $recentMatchQuery->where('traffic_zone_id', $payload['traffic_zone_id']);
-                        } else {
-                            $recentMatchQuery->whereNull('traffic_zone_id');
-                        }
-
-                        if (isset($payload['transporte_id'])) {
-                            $recentMatchQuery->where('transporte_id', $payload['transporte_id']);
-                        } else {
-                            $recentMatchQuery->whereNull('transporte_id');
-                        }
-
-                        if (isset($payload['ruta']) && $payload['ruta'] !== '') {
-                            $recentMatchQuery->where('ruta', $payload['ruta']);
-                        } else {
-                            $recentMatchQuery->where(function ($q) {
-                                $q->whereNull('ruta')->orWhere('ruta', '');
-                            });
-                        }
-
-                        if (isset($payload['numero']) && $payload['numero'] !== '') {
-                            $recentMatchQuery->where('numero', $payload['numero']);
-                        } else {
-                            $recentMatchQuery->where(function ($q) {
-                                $q->whereNull('numero')->orWhere('numero', '');
-                            });
-                        }
-
-                        if (! empty($usedRecordIdsInBatch)) {
-                            $recentMatchQuery->whereNotIn('id', $usedRecordIdsInBatch);
-                        }
-
-                        $recentMatchQuery->where('created_at', '>=', Carbon::now()->subMinutes(2));
-
-                        $recentMatch = $recentMatchQuery->latest('id')->first();
-                        if ($recentMatch) {
-                            $record = $recentMatch;
-                        }
-                    }
-
-                    if ($record) {
+                    ];                    if ($record) {
                         $usedRecordIdsInBatch[] = $record->id;
                         $original = $record->getOriginal();
                         $record->update($payload);
@@ -295,15 +348,11 @@ class DriverLogisticsRecordController extends Controller
                             }
                             $oldValue = $original[$key] ?? 'N/A';
                             if ($key === 'transportista_id') {
-                                $oldCarrier = \App\Models\Transportista::find($oldValue);
-                                $newCarrier = \App\Models\Transportista::find($newValue);
-                                $oldValue = $oldCarrier ? $oldCarrier->name : 'N/A';
-                                $newValue = $newCarrier ? $newCarrier->name : 'N/A';
+                                $oldValue = $getCarrierName($oldValue);
+                                $newValue = $getCarrierName($newValue);
                             } elseif ($key === 'transporte_id') {
-                                $oldTrans = \App\Models\Transporte::find($oldValue);
-                                $newTrans = \App\Models\Transporte::find($newValue);
-                                $oldValue = $oldTrans ? ($oldTrans->alias ?: $oldTrans->license_plate) : 'N/A';
-                                $newValue = $newTrans ? ($newTrans->alias ?: $newTrans->license_plate) : 'N/A';
+                                $oldValue = $getTransporteName($oldValue);
+                                $newValue = $getTransporteName($newValue);
                             } elseif ($key === 'zona_lejana') {
                                 $oldValue = $oldValue ? 'Sí' : 'No';
                                 $newValue = $newValue ? 'Sí' : 'No';
@@ -324,7 +373,7 @@ class DriverLogisticsRecordController extends Controller
                         $payload['created_by'] = $user ? $user->id : null;
                         $record = DriverLogisticsRecord::create($payload);
                         $usedRecordIdsInBatch[] = $record->id;
-                        $carrierName = $record->transportista ? $record->transportista->name : 'N/A';
+                        $carrierName = $getCarrierName($record->transportista_id);
                         $fechaStr = $record->fecha instanceof Carbon ? $record->fecha->format('Y-m-d') : substr($record->fecha, 0, 10);
                         \App\Models\DriverLogisticsRecordLog::create([
                             'driver_logistics_record_id' => $record->id,
@@ -334,6 +383,8 @@ class DriverLogisticsRecordController extends Controller
                         ]);
                     }
 
+                    $savedRecordIds[] = $record->id;
+
                     $savedList[] = [
                         'temp_id' => $rowData['temp_id'] ?? null,
                         'id' => $record->id,
@@ -342,6 +393,10 @@ class DriverLogisticsRecordController extends Controller
 
                 return $savedList;
             });
+
+            // Automatically reimport/sync modified logistics records into driver payment receipts ONCE for the entire batch
+            app(DriverLogisticsAutoSyncService::class)
+                ->syncByRecordIds($savedRecordIds, $deletedIds);
 
             return response()->json([
                 'success' => true,
@@ -353,6 +408,8 @@ class DriverLogisticsRecordController extends Controller
                 'success' => false,
                 'message' => 'Error al guardar la planilla: ' . $e->getMessage(),
             ], 422);
+        } finally {
+            DriverLogisticsAutoSyncService::$isSyncing = false;
         }
     }
 
@@ -500,7 +557,11 @@ class DriverLogisticsRecordController extends Controller
             'details' => "Eliminado directamente: Registro con fecha {$fechaStr} para el chofer {$carrierName}.",
         ]);
 
+        $recordId = $record->id;
         $record->delete();
+
+        app(\App\Services\DriverPayments\DriverLogisticsAutoSyncService::class)
+            ->syncByRecordIds([], [$recordId]);
 
         return response()->json([
             'success' => true,
