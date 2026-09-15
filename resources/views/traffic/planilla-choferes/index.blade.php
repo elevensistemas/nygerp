@@ -368,7 +368,6 @@
           <small class="text-muted">Escribe un valor de SVS por línea. Se actualizarán inmediatamente las opciones en la planilla de esta zona.</small>
         </div>
       </div>
-      </div>
       <div class="modal-footer bg-light border-top-0">
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
         <button type="button" class="btn btn-primary px-4" id="btnSaveSvsFromPlanilla">
@@ -785,27 +784,97 @@
       }
 
       if (initialRecords.length > 0) {
-        recordsByBody = {};
+        recordsRawByBody = {};
         recordsCountByBody = {};
-        renderedBodies = {};
+        renderedIndexByBody = {};
 
+        // 1. Group raw records by bodyId in memory (ultra-fast < 1ms)
         initialRecords.forEach(record => {
-          const res = generateRowHtml(record);
-          if (!recordsByBody[res.bodyId]) {
-            recordsByBody[res.bodyId] = [];
-            recordsCountByBody[res.bodyId] = 0;
+          let trafficZoneId = record.traffic_zone_id || null;
+          let zona = record.zona || '';
+          let bodyId = 'sheetTableBody_none';
+
+          if (!trafficZoneId && zona) {
+            const matchingZoneByName = zonesData.find(z => z.name === zona);
+            if (matchingZoneByName) {
+              trafficZoneId = matchingZoneByName.id;
+            }
           }
-          recordsByBody[res.bodyId].push(res.html);
-          recordsCountByBody[res.bodyId]++;
+          if (trafficZoneId) {
+            const matchingZone = zonesData.find(z => z.id === trafficZoneId);
+            if (matchingZone) {
+              bodyId = `sheetTableBody_${matchingZone.id}`;
+            }
+          }
+
+          if (!recordsRawByBody[bodyId]) {
+            recordsRawByBody[bodyId] = [];
+            recordsCountByBody[bodyId] = 0;
+          }
+          recordsRawByBody[bodyId].push(record);
+          recordsCountByBody[bodyId]++;
         });
 
-        window.renderTabBodyIfNeeded = function(bodyId) {
-          if (renderedBodies[bodyId]) return;
-          renderedBodies[bodyId] = true;
+        const RENDER_CHUNK_SIZE = 35;
 
-          if (recordsByBody[bodyId] && recordsByBody[bodyId].length > 0) {
-            $(`#${bodyId}`).append(recordsByBody[bodyId].join(''));
+        window.renderTabBodyIfNeeded = function (bodyId) {
+          if (!recordsRawByBody[bodyId] || recordsRawByBody[bodyId].length === 0) return;
+          if (renderedIndexByBody[bodyId] === undefined) {
+            renderedIndexByBody[bodyId] = 0;
           }
+
+          const rawRecords = recordsRawByBody[bodyId];
+          const total = rawRecords.length;
+
+          if (renderedIndexByBody[bodyId] >= total) return;
+
+          const zoneId = bodyId.replace('sheetTableBody_', '');
+          const $tabBtn = zoneId === 'none' ? $('#tab-zone-none') : $(`#tab-zone-${zoneId}`);
+
+          if (renderedIndexByBody[bodyId] === 0) {
+            if ($tabBtn.length && !$tabBtn.find('.tab-spinner').length) {
+              $tabBtn.append('<i class="fa-solid fa-spinner fa-spin ms-1 text-primary tab-spinner"></i>');
+            }
+            if (!$(`#${bodyId} .tab-loading-row`).length && $(`#${bodyId} tr`).length === 0) {
+              $(`#${bodyId}`).html(`
+                <tr class="tab-loading-row">
+                  <td colspan="35" class="text-center py-4 bg-light">
+                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                    <span class="fw-semibold text-secondary">Cargando registros de esta zona...</span>
+                  </td>
+                </tr>
+              `);
+            }
+          }
+
+          function renderNextChunk() {
+            const startIndex = renderedIndexByBody[bodyId];
+            if (startIndex >= total) {
+              $tabBtn.find('.tab-spinner').remove();
+              $(`#${bodyId} .tab-loading-row`).remove();
+              return;
+            }
+
+            const endIndex = Math.min(startIndex + RENDER_CHUNK_SIZE, total);
+            const chunkHtmlArray = [];
+
+            for (let i = startIndex; i < endIndex; i++) {
+              const res = generateRowHtml(rawRecords[i], bodyId);
+              chunkHtmlArray.push(res.html);
+            }
+
+            $(`#${bodyId} .tab-loading-row`).remove();
+            $(`#${bodyId}`).append(chunkHtmlArray.join(''));
+            renderedIndexByBody[bodyId] = endIndex;
+
+            if (endIndex < total) {
+              requestAnimationFrame(renderNextChunk);
+            } else {
+              $tabBtn.find('.tab-spinner').remove();
+            }
+          }
+
+          setTimeout(renderNextChunk, 10);
         };
 
         // Determine active tab body ID
@@ -894,6 +963,32 @@
       $(`#${res.bodyId}`).append(res.html);
     }
 
+    let cachedBaseCarrierOptions = null;
+    function buildCarrierOptions(selectedId) {
+      if (!cachedBaseCarrierOptions) {
+        let opts = `<option value="">-- Seleccionar --</option>`;
+        carriersData.forEach(c => {
+          opts += `<option value="${c.id}">${c.name}</option>`;
+        });
+        cachedBaseCarrierOptions = opts;
+      }
+      if (!selectedId) return cachedBaseCarrierOptions;
+      return cachedBaseCarrierOptions.replace(`value="${selectedId}"`, `value="${selectedId}" selected`);
+    }
+
+    let cachedBaseConceptOptions = null;
+    function buildPaymentConceptOptions(selectedName) {
+      if (!cachedBaseConceptOptions) {
+        let opts = `<option value="">-- Seleccionar --</option>`;
+        paymentConceptsData.forEach(c => {
+          opts += `<option value="${c.name}">${c.name}</option>`;
+        });
+        cachedBaseConceptOptions = opts;
+      }
+      if (!selectedName) return cachedBaseConceptOptions;
+      return cachedBaseConceptOptions.replace(`value="${selectedName}"`, `value="${selectedName}" selected`);
+    }
+
     function generateRowHtml(data = null, targetBodyId = null) {
       rowCounter++;
       const uniqueId = `row_${rowCounter}`;
@@ -962,16 +1057,10 @@
       const observacion = data ? data.observacion : '';
 
       // Generate Carrier select options
-      let carrierOptions = `<option value="">-- Seleccionar --</option>`;
-      carriersData.forEach(c => {
-        carrierOptions += `<option value="${c.id}" ${c.id == carrierId ? 'selected' : ''}>${c.name}</option>`;
-      });
+      const carrierOptions = buildCarrierOptions(carrierId);
 
       // Generate Concept options for payment zone (zona field)
-      let paymentConceptOptions = `<option value="">-- Seleccionar --</option>`;
-      paymentConceptsData.forEach(c => {
-        paymentConceptOptions += `<option value="${c.name}" ${c.name === zona ? 'selected' : ''}>${c.name}</option>`;
-      });
+      const paymentConceptOptions = buildPaymentConceptOptions(zona);
 
       // Generate SVS options associated with this operational zone (svc field)
       let zoneOptionsForSvc = `<option value="">-- Seleccionar --</option>`;
@@ -1289,24 +1378,14 @@
       // Update each zone count
       zonesData.forEach(z => {
         const bodyId = `sheetTableBody_${z.id}`;
-        let count = 0;
-        if (renderedBodies[bodyId]) {
-          count = $(`#${bodyId} tr`).length;
-        } else {
-          count = recordsCountByBody[bodyId] || 0;
-        }
+        const count = recordsCountByBody[bodyId] || 0;
         $(`#badge-count-${z.id}`).text(count);
         grandTotal += count;
       });
       
       // None zone
       const bodyNone = 'sheetTableBody_none';
-      let countNone = 0;
-      if (renderedBodies[bodyNone]) {
-        countNone = $(`#${bodyNone} tr`).length;
-      } else {
-        countNone = recordsCountByBody[bodyNone] || 0;
-      }
+      const countNone = recordsCountByBody[bodyNone] || 0;
       $('#badge-count-none').text(countNone);
       grandTotal += countNone;
 

@@ -29,11 +29,19 @@ class DriverLogisticsRecordController extends Controller
         $selectedCarrierId = $request->input('transportista_id');
         $selectedConcept = $request->input('concepto');
 
+        $carriers = Transportista::active()
+            ->select(['id', 'name'])
+            ->with(['transportes' => function ($q) {
+                $q->where('is_active', true)
+                  ->select(['id', 'transportista_id', 'license_plate', 'alias', 'owner_name', 'model', 'type', 'is_default']);
+            }])
+            ->orderBy('name')
+            ->get();
+
+        $activeCarrierIds = $carriers->pluck('id');
+
         $query = DriverLogisticsRecord::query()
-            ->whereHas('transportista', function ($q) {
-                $q->active();
-            })
-            ->with(['transportista', 'transporte'])
+            ->whereIn('transportista_id', $activeCarrierIds)
             ->whereBetween('fecha', [$fechaDesde, $fechaHasta]);
 
         if ($selectedCarrierId) {
@@ -48,15 +56,16 @@ class DriverLogisticsRecordController extends Controller
             ->orderBy('id')
             ->get();
 
-        $carriers = Transportista::active()
-            ->with(['transportes' => function ($q) {
-                $q->where('is_active', true);
-            }])
+        $zones = TrafficZone::query()
+            ->select(['id', 'name', 'svs_values'])
             ->orderBy('name')
             ->get();
 
-        $zones = TrafficZone::query()->orderBy('name')->get();
-        $locations = Location::active()->orderBy('name')->get();
+        $locations = Location::active()
+            ->select(['id', 'name'])
+            ->orderBy('name')
+            ->get();
+
         $paymentConcepts = \App\Models\DriverPaymentConcept::query()
             ->where('active', true)
             ->orderBy('name')
