@@ -18,10 +18,7 @@
       <i class="fa-solid fa-broom"></i>
       <span>Limpiar Duplicados</span>
     </button>
-    <button type="button" class="btn btn-success d-flex align-items-center gap-2 shadow-sm" id="btnSaveAll">
-      <i class="fa-solid fa-cloud-arrow-up"></i>
-      <span>Guardar Planilla</span>
-    </button>
+
   </div>
 </div>
 
@@ -218,12 +215,7 @@
     </div>
   </div>
   
-  <div class="card-footer bg-light py-3 border-top d-flex justify-content-end">
-    <button type="button" class="btn btn-success d-flex align-items-center gap-2 shadow-sm" id="btnSaveAllFooter">
-      <i class="fa-solid fa-cloud-arrow-up"></i>
-      <span>Guardar Planilla</span>
-    </button>
-  </div>
+
 </div>
 
 <div class="card shadow-sm border-0 bg-white">

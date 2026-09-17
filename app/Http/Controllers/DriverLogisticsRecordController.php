@@ -41,6 +41,15 @@ class DriverLogisticsRecordController extends Controller
         $activeCarrierIds = $carriers->pluck('id');
 
         $query = DriverLogisticsRecord::query()
+            ->select([
+                'id', 'fecha', 'transportista_id', 'transporte_id', 'traffic_zone_id',
+                'svc', 'ruta', 'numero', 'zona', 'paradas', 'paquetes', 'entregados',
+                'deja_en_svc', 'paq_no_colectado', 'nadie_en_domicilio', 'negocio_cerrado',
+                'qr', 'fuera_de_zona', 'zona_inaccesible', 'rechazado', 'sin_visitar',
+                'fraude', 'paquete_perdido', 'paquete_danado', 'paquete_robado',
+                'comentario_perdido', 'comentario_danado', 'comentario_robado',
+                'porcentaje', 'kilometros', 'kilometros_estimados', 'zona_lejana', 'observacion'
+            ])
             ->whereIn('transportista_id', $activeCarrierIds)
             ->whereBetween('fecha', [$fechaDesde, $fechaHasta]);
 
