@@ -900,8 +900,6 @@
           }
         });
       } else {
-        const firstZoneId = zonesData.length > 0 ? zonesData[0].id : 'none';
-        addRow(null, `sheetTableBody_${firstZoneId}`);
         updateRowCount();
       }
 
@@ -921,7 +919,8 @@
         width: '100%'
       });
 
-      $(document).on('change input', '.sheetTableBody input, .sheetTableBody select', function () {
+      $(document).on('change input', '.sheetTableBody input, .sheetTableBody select, .sheetTableBody textarea', function () {
+        $(this).closest('tr').addClass('is-dirty');
         triggerAutosave();
       });
 
@@ -1335,12 +1334,7 @@
                   showConfirmButton: false
                 });
 
-                const totalRows = $('.sheetTableBody tr').length;
-                if (totalRows === 0) {
-                  const firstZoneId = zonesData.length > 0 ? zonesData[0].id : 'none';
-                  addRow(null, `sheetTableBody_${firstZoneId}`);
-                  updateRowCount();
-                }
+                updateRowCount();
               },
               error: function (xhr) {
                 let errMsg = 'No se pudo eliminar el registro.';
@@ -1358,12 +1352,7 @@
             $row.remove();
             updateRowCount();
 
-            const totalRows = $('.sheetTableBody tr').length;
-            if (totalRows === 0) {
-              const firstZoneId = zonesData.length > 0 ? zonesData[0].id : 'none';
-              addRow(null, `sheetTableBody_${firstZoneId}`);
-              updateRowCount();
-            }
+            updateRowCount();
           }
         }
       });
@@ -1393,6 +1382,7 @@
     // Dynamic truck list populator (memory-based)
     window.onCarrierChange = function (rowId, selectedTruckId = null) {
       const $row = $(`#${rowId}`);
+      $row.addClass('is-dirty');
       const carrierId = $row.find('[data-field="transportista_id"]').val();
       const $truckSelect = $row.find('[data-field="transporte_id"]');
       const $addVehicleBtn = $row.find('.btn-add-vehicle');
@@ -1443,6 +1433,7 @@
 
     window.onTruckChange = function (rowId) {
       const $row = $(`#${rowId}`);
+      $row.addClass('is-dirty');
       const carrierId = $row.find('[data-field="transportista_id"]').val();
       const truckId = $row.find('[data-field="transporte_id"]').val();
       const $editVehicleBtn = $row.find('.btn-edit-vehicle');
@@ -2361,6 +2352,7 @@
     // Auto-calculate percentage
     window.onQtyChange = function (rowId) {
       const $row = $(`#${rowId}`);
+      $row.addClass('is-dirty');
       const packages = parseInt($row.find('[data-field="paquetes"]').val() || 0);
       const delivered = parseInt($row.find('[data-field="entregados"]').val() || 0);
       let percentage = '0.00';
@@ -2539,6 +2531,14 @@
         isSaving = false;
         if (isSilent) {
           showAutosaveStatus('saved');
+        } else {
+          Swal.fire({
+            icon: 'info',
+            title: 'Sin Cambios',
+            text: 'No hay modificaciones pendientes para guardar.',
+            timer: 2000,
+            showConfirmButton: false
+          });
         }
         if (savePending) {
           const nextSilent = pendingSilentMode;
