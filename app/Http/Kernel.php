@@ -67,5 +67,6 @@ class Kernel extends HttpKernel
         'admin' => \App\Http\Middleware\EnsureAdminOrSuper::class,
         'readonly.block' => \App\Http\Middleware\PreventReadOnlyWrites::class,
         'transportista.restrict' => \App\Http\Middleware\RestrictTransportistaAccess::class,
+        'hr.access' => \App\Http\Middleware\EnsureHrAccess::class,
     ];
 }

@@ -482,6 +482,7 @@
       $banksCrudActive = request()->routeIs('traffic.banks.*');
       $maintenanceActive = request()->routeIs('traffic.transportistas.*','traffic.transportes.*','traffic.delivery-reasons.*','traffic.locations.*','traffic.zones.*', 'traffic.banks.*')
         && !request()->routeIs('traffic.transportistas.import-config*','traffic.transportes.import-config*');
+      $rrhhActive = request()->routeIs('rrhh.*');
       $configActive = request()->routeIs('users.*') || request()->routeIs('terms.*') || request()->routeIs('confirmations.*') || request()->routeIs('config.parameters.*');
       $currentUser = auth()->user();
       $isReadOnlyUser = $currentUser && $currentUser->isReadOnly();
@@ -893,6 +894,53 @@
                   <span>Pedidos</span>
                 </a>
               @endif
+            </div>
+          </div>
+          @endif
+
+          @if(!$isLimitedTransportista && ($currentUser && $currentUser->isHrAdmin()))
+          {{-- RECURSOS HUMANOS --}}
+          <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {{ $rrhhActive ? 'active' : '' }}"
+             data-bs-toggle="collapse" href="#rrhhCollapse" role="button"
+             aria-expanded="{{ $rrhhActive ? 'true' : 'false' }}" aria-controls="rrhhCollapse">
+            <span class="d-flex align-items-center gap-2">
+              <i class="fa-solid fa-users-gear"></i>
+              <span>Recursos Humanos</span>
+            </span>
+            <span class="chev">></span>
+          </a>
+          <div class="collapse {{ $rrhhActive ? 'show' : '' }}" id="rrhhCollapse" data-bs-parent="#sidebarMenu">
+            <div class="list-group list-group-flush">
+              <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.dashboard') ? 'active' : '' }}"
+                 href="{{ route('rrhh.dashboard', [], false) }}">
+                <i class="fa-solid fa-gauge-high"></i>
+                <span>Panel RR. HH.</span>
+              </a>
+              <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.employees.*') ? 'active' : '' }}"
+                 href="{{ route('rrhh.employees.index', [], false) }}">
+                <i class="fa-solid fa-id-card"></i>
+                <span>Colaboradores</span>
+              </a>
+              <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.departments.*') ? 'active' : '' }}"
+                 href="{{ route('rrhh.departments.index', [], false) }}">
+                <i class="fa-solid fa-sitemap"></i>
+                <span>Áreas y Deptos.</span>
+              </a>
+              <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.positions.*') ? 'active' : '' }}"
+                 href="{{ route('rrhh.positions.index', [], false) }}">
+                <i class="fa-solid fa-briefcase"></i>
+                <span>Puestos</span>
+              </a>
+              <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.branches.*') ? 'active' : '' }}"
+                 href="{{ route('rrhh.branches.index', [], false) }}">
+                <i class="fa-solid fa-building"></i>
+                <span>Sucursales / Bases</span>
+              </a>
+              <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.agreements.*') ? 'active' : '' }}"
+                 href="{{ route('rrhh.agreements.index', [], false) }}">
+                <i class="fa-solid fa-file-contract"></i>
+                <span>Convenios</span>
+              </a>
             </div>
           </div>
           @endif

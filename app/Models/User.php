@@ -163,4 +163,52 @@ class User extends Authenticatable
     {
         return $this->transportista_id ?? optional($this->transportistaProfile)->id;
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Métodos y Relaciones de Recursos Humanos (RR. HH.)
+    |--------------------------------------------------------------------------
+    */
+    public function hrEmployee(): HasOne
+    {
+        return $this->hasOne(\App\Models\HR\Employee::class, 'user_id');
+    }
+
+    public function isHrAdmin(): bool
+    {
+        return $this->isAdminOrSuper();
+    }
+
+    public function hasHrEmployeeProfile(): bool
+    {
+        return $this->hrEmployee !== null;
+    }
+
+    public function isActiveHrEmployee(): bool
+    {
+        return $this->hasHrEmployeeProfile() && $this->hrEmployee->status === 'activo';
+    }
+
+    public function isHrEmployee(): bool
+    {
+        return $this->isActiveHrEmployee();
+    }
+
+    public function isExEmployee(): bool
+    {
+        return $this->hasHrEmployeeProfile() && $this->hrEmployee->status === 'egresado';
+    }
+
+    public function isHrManager(): bool
+    {
+        if ($this->isHrAdmin()) {
+            return true;
+        }
+        if (!$this->isActiveHrEmployee()) {
+            return false;
+        }
+        $empId = $this->hrEmployee->id;
+        return \App\Models\HR\Department::where('manager_id', $empId)->where('is_active', true)->exists()
+            || \App\Models\HR\Employee::where('manager_id', $empId)->where('status', 'activo')->exists();
+    }
 }

@@ -48,6 +48,13 @@ use App\Http\Controllers\DriverAdvanceRequestController;
 use App\Http\Controllers\DriverLogisticsRecordController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\HR\HrDashboardController;
+use App\Http\Controllers\HR\HrEmployeeController;
+use App\Http\Controllers\HR\HrDepartmentController;
+use App\Http\Controllers\HR\HrPositionController;
+use App\Http\Controllers\HR\HrBranchController;
+use App\Http\Controllers\HR\HrAgreementController;
+use App\Http\Controllers\HR\HrEmployeeFileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 
@@ -336,6 +343,43 @@ Route::middleware(['auth', 'terms.accepted', 'transportista.restrict', 'readonly
         Route::post('/adelantos/{advanceRequest}/aceptar-contraoferta', [DriverAdvanceRequestController::class, 'acceptCounterOffer'])->name('adelantos.accept-counter');
         Route::post('/adelantos/{advanceRequest}/rechazar-contraoferta', [DriverAdvanceRequestController::class, 'rejectCounterOffer'])->name('adelantos.reject-counter');
     });
+
+    // --- RECURSOS HUMANOS (RR. HH.) ---
+    Route::prefix('rrhh')
+        ->name('rrhh.')
+        ->middleware(['hr.access:admin'])
+        ->group(function () {
+            // Dashboard
+            Route::get('/', [HrDashboardController::class, 'index'])->name('dashboard');
+
+            // Áreas / Departamentos
+            Route::patch('departments/{department}/toggle-status', [HrDepartmentController::class, 'toggleStatus'])->name('departments.toggle-status');
+            Route::resource('departments', HrDepartmentController::class)->except(['show']);
+
+            // Puestos
+            Route::patch('positions/{position}/toggle-status', [HrPositionController::class, 'toggleStatus'])->name('positions.toggle-status');
+            Route::resource('positions', HrPositionController::class)->except(['show']);
+
+            // Sucursales / Bases
+            Route::patch('branches/{branch}/toggle-status', [HrBranchController::class, 'toggleStatus'])->name('branches.toggle-status');
+            Route::resource('branches', HrBranchController::class)->except(['show']);
+
+            // Convenios / Políticas
+            Route::patch('agreements/{agreement}/toggle-status', [HrAgreementController::class, 'toggleStatus'])->name('agreements.toggle-status');
+            Route::resource('agreements', HrAgreementController::class)->except(['show']);
+
+            // Empleados y Legajo Digital
+            Route::post('employees/{employee}/status', [HrEmployeeController::class, 'updateStatus'])->name('employees.update-status');
+            Route::post('employees/{employee}/terminate', [HrEmployeeController::class, 'terminate'])->name('employees.terminate');
+            Route::post('employees/{employee}/unlink-user', [HrEmployeeController::class, 'unlinkUser'])->name('employees.unlink-user');
+            Route::resource('employees', HrEmployeeController::class);
+
+            // Documentación privada del legajo digital
+            Route::post('employees/{employee}/files', [HrEmployeeFileController::class, 'store'])->name('employees.files.store');
+            Route::get('employees/{employee}/files/{file}/download', [HrEmployeeFileController::class, 'download'])->name('employees.files.download');
+            Route::get('employees/{employee}/files/{file}/preview', [HrEmployeeFileController::class, 'preview'])->name('employees.files.preview');
+            Route::post('employees/{employee}/files/{file}/void', [HrEmployeeFileController::class, 'voidFile'])->name('employees.files.void');
+        });
 });
 
 Route::middleware(['auth', 'terms.accepted', 'admin', 'readonly.block'])->group(function () {
