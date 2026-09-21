@@ -16,6 +16,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             DeliveryReasonSeeder::class,
             DriverLiquidationSettingsSeeder::class,
+            starters::class,
+            make_admin::class,
         ]);
     }
 }

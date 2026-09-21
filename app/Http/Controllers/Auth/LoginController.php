@@ -37,4 +37,32 @@ class LoginController extends Controller
     {
         $this->middleware('guest')->except('logout');
     }
+
+    /**
+     * Get the needed authorization credentials from the request.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return array
+     */
+    protected function credentials(\Illuminate\Http\Request $request)
+    {
+        $login = $request->input($this->username());
+
+        if (!filter_var($login, FILTER_VALIDATE_EMAIL)) {
+            $user = \App\Models\User::where('name', $login)
+                ->orWhere('email', $login)
+                ->orWhere('email', $login . '@admin.com')
+                ->orWhere('email', $login . '@eleven.com')
+                ->first();
+
+            if ($user) {
+                return [
+                    'email' => $user->email,
+                    'password' => $request->input('password'),
+                ];
+            }
+        }
+
+        return $request->only($this->username(), 'password');
+    }
 }

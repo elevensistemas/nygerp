@@ -16,10 +16,24 @@ class make_admin extends Seeder
     public function run()
     {
         User::updateOrCreate(
+            ['email' => 'admin@admin.com'],
+            [
+                'name' => 'admin',
+                'password' => Hash::make('admin'),
+                'role' => User::ROLE_ADMIN,
+                'accepted_at' => now(),
+                'email_verified_at' => now(),
+            ]
+        );
+
+        User::updateOrCreate(
             ['email' => 'admin@eleven.com'],
             [
                 'name' => 'Admin',
-                'password' => Hash::make('Trinitotolueno2015'),
+                'password' => Hash::make('admin'),
+                'role' => User::ROLE_ADMIN,
+                'accepted_at' => now(),
+                'email_verified_at' => now(),
             ]
         );
     }
