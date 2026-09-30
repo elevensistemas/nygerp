@@ -9,9 +9,11 @@ use App\Models\HR\Branch;
 use App\Models\HR\Department;
 use App\Models\HR\Employee;
 use App\Models\HR\HrAuditLog;
+use App\Models\HR\LeaveType;
 use App\Models\HR\Position;
 use App\Models\User;
 use App\Services\HR\HrAuditService;
+use App\Services\HR\HrLeaveCalculationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -121,7 +123,7 @@ class HrEmployeeController extends Controller
             ->with('ok', "Colaborador {$employee->full_name} registrado exitosamente.");
     }
 
-    public function show(Employee $employee)
+    public function show(Employee $employee, HrLeaveCalculationService $calcService)
     {
         $employee->load([
             'department',
@@ -170,7 +172,34 @@ class HrEmployeeController extends Controller
             ->take(15)
             ->get();
 
-        return view('hr.employees.show', compact('employee', 'filesStats', 'auditLogs', 'today', 'expirationThreshold'));
+        // Vacaciones y Licencias del colaborador
+        $currentYear = $today->year;
+        $leaveTypes = LeaveType::where('is_active', true)->orderBy('display_order')->get();
+        $leaveBalances = [];
+        foreach ($leaveTypes as $lt) {
+            $leaveBalances[$lt->id] = $calcService->getOrCreateBalance($employee, $lt, $currentYear);
+        }
+
+        $vacationType = $leaveTypes->firstWhere('code', 'VAC');
+        $vacationBalance = $vacationType ? ($leaveBalances[$vacationType->id] ?? null) : null;
+
+        $leaveRequests = $employee->leaveRequests()
+            ->with(['leaveType', 'approvedByUser'])
+            ->latest('date_from')
+            ->get();
+
+        return view('hr.employees.show', compact(
+            'employee',
+            'filesStats',
+            'auditLogs',
+            'today',
+            'expirationThreshold',
+            'leaveTypes',
+            'leaveBalances',
+            'vacationBalance',
+            'leaveRequests',
+            'currentYear'
+        ));
     }
 
     public function edit(Employee $employee)

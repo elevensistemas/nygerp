@@ -31,8 +31,7 @@ class HrPhase2Test extends TestCase
     {
         parent::setUp();
 
-        // Asegurar que las migraciones se apliquen en nygerp_testing
-        Artisan::call('migrate');
+        // Storage fakes
         Storage::fake('local');
         Storage::fake('public');
 

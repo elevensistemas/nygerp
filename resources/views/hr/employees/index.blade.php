@@ -75,7 +75,7 @@
   {{-- Tabla de Empleados --}}
   <div class="card border-0 shadow-sm">
     <div class="card-body p-0">
-      <div class="table-responsive">
+      <div class="table-responsive" style="min-height: 250px;">
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light">
             <tr>
@@ -146,10 +146,10 @@
                 </td>
                 <td class="text-end pe-3">
                   <div class="dropdown">
-                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
                       Acciones
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="z-index: 1065; min-width: 220px;">
                       <li>
                         <a class="dropdown-item" href="{{ route('rrhh.employees.show', $employee) }}">
                           <i class="fa-solid fa-folder-open text-primary me-2"></i>Ver Ficha / Legajo
@@ -160,7 +160,14 @@
                           <i class="fa-solid fa-pen-to-square text-secondary me-2"></i>Editar Datos
                         </a>
                       </li>
-                      <li><hr class="dropdown-divider"></li>
+                      @if($employee->status !== 'egresado')
+                        <li>
+                          <a class="dropdown-item text-primary" href="{{ route('rrhh.leave-requests.create', ['employee_id' => $employee->id]) }}">
+                            <i class="fa-solid fa-plane-departure me-2"></i>Asignar Vacaciones
+                          </a>
+                        </li>
+                      @endif
+                      <li><hr class="dropdown-divider my-1"></li>
                       <li>
                         <button type="button" class="dropdown-item text-warning" data-bs-toggle="modal" data-bs-target="#statusModal{{ $employee->id }}">
                           <i class="fa-solid fa-arrows-rotate me-2"></i>Cambiar Estado

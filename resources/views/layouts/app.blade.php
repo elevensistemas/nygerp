@@ -138,6 +138,15 @@
     .btn {
       border-radius: 10px;
     }
+    .table-responsive .dropdown-menu,
+    table .dropdown-menu {
+      z-index: 1065 !important;
+    }
+    .dropdown-menu {
+      border-radius: 10px;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16) !important;
+      border: 1px solid rgba(226, 232, 240, 0.95);
+    }
     .btn-outline-primary,
     .btn-outline-secondary,
     .btn-outline-warning,
@@ -483,6 +492,9 @@
       $maintenanceActive = request()->routeIs('traffic.transportistas.*','traffic.transportes.*','traffic.delivery-reasons.*','traffic.locations.*','traffic.zones.*', 'traffic.banks.*')
         && !request()->routeIs('traffic.transportistas.import-config*','traffic.transportes.import-config*');
       $rrhhActive = request()->routeIs('rrhh.*');
+      $rrhhManagerActive = request()->routeIs('rrhh.manager.*');
+      $rrhhPortalActive = request()->routeIs('rrhh.portal.*');
+      $rrhhAdminActive = request()->routeIs('rrhh.*') && ! $rrhhManagerActive && ! $rrhhPortalActive;
       $configActive = request()->routeIs('users.*') || request()->routeIs('terms.*') || request()->routeIs('confirmations.*') || request()->routeIs('config.parameters.*');
       $currentUser = auth()->user();
       $isReadOnlyUser = $currentUser && $currentUser->isReadOnly();
@@ -899,17 +911,17 @@
           @endif
 
           @if(!$isLimitedTransportista && ($currentUser && $currentUser->isHrAdmin()))
-          {{-- RECURSOS HUMANOS --}}
-          <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {{ $rrhhActive ? 'active' : '' }}"
+          {{-- RECURSOS HUMANOS (ADMIN) --}}
+          <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {{ $rrhhAdminActive ? 'active' : '' }}"
              data-bs-toggle="collapse" href="#rrhhCollapse" role="button"
-             aria-expanded="{{ $rrhhActive ? 'true' : 'false' }}" aria-controls="rrhhCollapse">
+             aria-expanded="{{ $rrhhAdminActive ? 'true' : 'false' }}" aria-controls="rrhhCollapse">
             <span class="d-flex align-items-center gap-2">
               <i class="fa-solid fa-users-gear"></i>
               <span>Recursos Humanos</span>
             </span>
             <span class="chev">></span>
           </a>
-          <div class="collapse {{ $rrhhActive ? 'show' : '' }}" id="rrhhCollapse" data-bs-parent="#sidebarMenu">
+          <div class="collapse {{ $rrhhAdminActive ? 'show' : '' }}" id="rrhhCollapse" data-bs-parent="#sidebarMenu">
             <div class="list-group list-group-flush">
               <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.dashboard') ? 'active' : '' }}"
                  href="{{ route('rrhh.dashboard', [], false) }}">
@@ -920,6 +932,36 @@
                  href="{{ route('rrhh.employees.index', [], false) }}">
                 <i class="fa-solid fa-id-card"></i>
                 <span>Colaboradores</span>
+              </a>
+              <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.leave-requests.*') ? 'active' : '' }}"
+                 href="{{ route('rrhh.leave-requests.index', [], false) }}">
+                <i class="fa-solid fa-plane-departure"></i>
+                <span>Licencias y Vacaciones</span>
+              </a>
+              <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.calendar*') ? 'active' : '' }}"
+                 href="{{ route('rrhh.calendar', [], false) }}">
+                <i class="fa-solid fa-calendar-days"></i>
+                <span>Calendario General</span>
+              </a>
+              <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.leave-balances.*') ? 'active' : '' }}"
+                 href="{{ route('rrhh.leave-balances.index', [], false) }}">
+                <i class="fa-solid fa-scale-balanced"></i>
+                <span>Saldos</span>
+              </a>
+              <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.leave-types.*') ? 'active' : '' }}"
+                 href="{{ route('rrhh.leave-types.index', [], false) }}">
+                <i class="fa-solid fa-tags"></i>
+                <span>Tipos de Ausencia</span>
+              </a>
+              <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.leave-policies.*') ? 'active' : '' }}"
+                 href="{{ route('rrhh.leave-policies.index', [], false) }}">
+                <i class="fa-solid fa-sliders"></i>
+                <span>Políticas y Escalas</span>
+              </a>
+              <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.holidays.*') ? 'active' : '' }}"
+                 href="{{ route('rrhh.holidays.index', [], false) }}">
+                <i class="fa-solid fa-champagne-glasses"></i>
+                <span>Feriados</span>
               </a>
               <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.departments.*') ? 'active' : '' }}"
                  href="{{ route('rrhh.departments.index', [], false) }}">
@@ -940,6 +982,70 @@
                  href="{{ route('rrhh.agreements.index', [], false) }}">
                 <i class="fa-solid fa-file-contract"></i>
                 <span>Convenios</span>
+              </a>
+            </div>
+          </div>
+          @endif
+
+          @if(!$isLimitedTransportista && ($currentUser && $currentUser->isHrManager()))
+          {{-- GESTION DE EQUIPO (MANAGER) --}}
+          <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {{ $rrhhManagerActive ? 'active' : '' }}"
+             data-bs-toggle="collapse" href="#managerCollapse" role="button"
+             aria-expanded="{{ $rrhhManagerActive ? 'true' : 'false' }}" aria-controls="managerCollapse">
+            <span class="d-flex align-items-center gap-2">
+              <i class="fa-solid fa-users-viewfinder"></i>
+              <span>Gestión de Equipo</span>
+            </span>
+            <span class="chev">></span>
+          </a>
+          <div class="collapse {{ $rrhhManagerActive ? 'show' : '' }}" id="managerCollapse" data-bs-parent="#sidebarMenu">
+            <div class="list-group list-group-flush">
+              <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.manager.requests*') ? 'active' : '' }}"
+                 href="{{ route('rrhh.manager.requests', [], false) }}">
+                <i class="fa-solid fa-inbox"></i>
+                <span>Solicitudes del Equipo</span>
+              </a>
+              <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.manager.calendar*') ? 'active' : '' }}"
+                 href="{{ route('rrhh.manager.calendar', [], false) }}">
+                <i class="fa-solid fa-calendar-days"></i>
+                <span>Calendario del Equipo</span>
+              </a>
+            </div>
+          </div>
+          @endif
+
+          @if(!$isLimitedTransportista && ($currentUser && $currentUser->isHrEmployee()))
+          {{-- PORTAL DEL EMPLEADO --}}
+          <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {{ $rrhhPortalActive ? 'active' : '' }}"
+             data-bs-toggle="collapse" href="#portalCollapse" role="button"
+             aria-expanded="{{ $rrhhPortalActive ? 'true' : 'false' }}" aria-controls="portalCollapse">
+            <span class="d-flex align-items-center gap-2">
+              <i class="fa-solid fa-user-check"></i>
+              <span>Portal Empleado</span>
+            </span>
+            <span class="chev">></span>
+          </a>
+          <div class="collapse {{ $rrhhPortalActive ? 'show' : '' }}" id="portalCollapse" data-bs-parent="#sidebarMenu">
+            <div class="list-group list-group-flush">
+              <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.portal.dashboard') ? 'active' : '' }}"
+                 href="{{ route('rrhh.portal.dashboard', [], false) }}">
+                <i class="fa-solid fa-house-user"></i>
+                <span>Mi Portal</span>
+              </a>
+              <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.portal.requests') ? 'active' : '' }}"
+                 href="{{ route('rrhh.portal.requests', [], false) }}">
+                <i class="fa-solid fa-list-check"></i>
+                <span>Mis Licencias</span>
+              </a>
+              <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.portal.requests.create') ? 'active' : '' }}"
+                 href="{{ route('rrhh.portal.requests.create', [], false) }}">
+                <i class="fa-solid fa-circle-plus"></i>
+                <span>Solicitar Ausencia</span>
+              </a>
+              <a class="list-group-item list-group-item-action ps-4 d-flex align-items-center gap-2 {{ request()->routeIs('rrhh.portal.calendar') ? 'active' : '' }}"
+                 href="{{ route('rrhh.portal.calendar', [], false) }}">
+                <i class="fa-solid fa-calendar-days"></i>
+                <span>Mi Calendario</span>
               </a>
             </div>
           </div>
@@ -1166,6 +1272,21 @@
         initSelect2(document);
         blockReadOnlyActions();
         initConfirmations();
+
+        // Asegurar que dropdowns dentro de tablas floten por encima del scroll con strategy fixed
+        $(document).on('show.bs.dropdown', '.table-responsive .dropdown, table .dropdown', function () {
+          const toggleBtn = this.querySelector('[data-bs-toggle="dropdown"]');
+          if (toggleBtn && typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+            let instance = bootstrap.Dropdown.getInstance(toggleBtn);
+            if (!instance) {
+              instance = new bootstrap.Dropdown(toggleBtn, {
+                popperConfig: function (defaultConfig) {
+                  return Object.assign({}, defaultConfig, { strategy: 'fixed' });
+                }
+              });
+            }
+          }
+        });
 
         $(document).on('shown.bs.modal', '.modal', function () {
           initSelect2(this);

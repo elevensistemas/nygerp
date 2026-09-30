@@ -286,7 +286,7 @@ class HrPhase1Test extends TestCase
     public function test_14_hr_migrations_can_be_rolled_back_cleanly_in_test_database()
     {
         // Revertir migraciones de HR
-        $exitCode = Artisan::call('migrate:rollback', ['--step' => 5]);
+        $exitCode = Artisan::call('migrate:rollback', ['--step' => 6]);
         $this->assertEquals(0, $exitCode);
 
         $this->assertFalse(Schema::hasTable('hr_audit_logs'));

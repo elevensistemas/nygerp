@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Request;
 class HrAuditService
 {
     /**
-     * Registra una acción de auditoría inmutable en el módulo de RR. HH.
+     * Registra una acción en el Registro de Auditoría de RR. HH.
      */
     public static function log(
         string $action,

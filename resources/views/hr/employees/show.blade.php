@@ -40,6 +40,13 @@
         </div>
 
         <div class="d-flex flex-wrap gap-2">
+          @if($employee->status !== 'egresado')
+            <a href="{{ route('rrhh.leave-requests.create', ['employee_id' => $employee->id]) }}" class="btn btn-primary d-flex align-items-center gap-2">
+              <i class="fa-solid fa-plane-departure"></i>
+              <span>Asignar Vacaciones</span>
+            </a>
+          @endif
+
           <a href="{{ route('rrhh.employees.edit', $employee) }}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
             <i class="fa-solid fa-pen-to-square"></i>
             <span>Editar</span>
@@ -64,8 +71,16 @@
     <div class="card-footer bg-white border-top p-0 px-4">
       <ul class="nav nav-tabs border-0" id="employeeShowTabs" role="tablist">
         <li class="nav-item" role="presentation">
-          <button class="nav-link {{ request('tab') !== 'legajo' && request('tab') !== 'auditoria' ? 'active' : '' }} fw-semibold py-3 border-0 border-bottom border-2" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-pane" type="button" role="tab">
+          <button class="nav-link {{ request('tab') !== 'legajo' && request('tab') !== 'auditoria' && request('tab') !== 'vacaciones' ? 'active' : '' }} fw-semibold py-3 border-0 border-bottom border-2" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-pane" type="button" role="tab">
             <i class="fa-solid fa-user text-primary me-2"></i>Ficha del Colaborador
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link {{ request('tab') === 'vacaciones' ? 'active' : '' }} fw-semibold py-3 border-0 border-bottom border-2 position-relative" id="vacaciones-tab" data-bs-toggle="tab" data-bs-target="#vacaciones-pane" type="button" role="tab">
+            <i class="fa-solid fa-plane-departure text-primary me-2"></i>Vacaciones y Licencias
+            @if($vacationBalance && $vacationBalance->available_days > 0)
+              <span class="badge bg-success ms-1">{{ $vacationBalance->available_days }}d disp.</span>
+            @endif
           </button>
         </li>
         <li class="nav-item" role="presentation">
@@ -270,6 +285,208 @@
                 <p class="text-muted small mb-0">{{ $employee->notes }}</p>
               @endif
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {{-- TAB VACACIONES Y LICENCIAS --}}
+    <div class="tab-pane fade {{ request('tab') === 'vacaciones' ? 'show active' : '' }}" id="vacaciones-pane" role="tabpanel">
+      {{-- KPI Cards de Vacaciones --}}
+      <div class="row g-3 mb-4">
+        <div class="col-lg-3 col-6">
+          <div class="card border-0 shadow-sm text-center p-3 border-start border-primary border-4">
+            <span class="text-muted small fw-semibold">Disponibles {{ $currentYear }}</span>
+            <h3 class="fw-bold text-primary mb-0 mt-1">
+              {{ $vacationBalance ? $vacationBalance->available_days : 0 }} <small class="fs-6 text-muted">días</small>
+            </h3>
+          </div>
+        </div>
+        <div class="col-lg-3 col-6">
+          <div class="card border-0 shadow-sm text-center p-3 border-start border-info border-4">
+            <span class="text-muted small fw-semibold">Asignados por Ley / Convenio</span>
+            <h3 class="fw-bold text-info mb-0 mt-1">
+              {{ $vacationBalance ? $vacationBalance->total_granted : 0 }} <small class="fs-6 text-muted">días</small>
+            </h3>
+          </div>
+        </div>
+        <div class="col-lg-3 col-6">
+          <div class="card border-0 shadow-sm text-center p-3 border-start border-success border-4">
+            <span class="text-muted small fw-semibold">Gozados / Aprobados</span>
+            <h3 class="fw-bold text-success mb-0 mt-1">
+              {{ $vacationBalance ? $vacationBalance->used_days : 0 }} <small class="fs-6 text-muted">días</small>
+            </h3>
+          </div>
+        </div>
+        <div class="col-lg-3 col-6">
+          <div class="card border-0 shadow-sm text-center p-3 border-start border-warning border-4">
+            <span class="text-muted small fw-semibold">En Trámite / Pendientes</span>
+            <h3 class="fw-bold text-warning mb-0 mt-1">
+              {{ $vacationBalance ? $vacationBalance->pending_days : 0 }} <small class="fs-6 text-muted">días</small>
+            </h3>
+          </div>
+        </div>
+      </div>
+
+      {{-- Listado y Gestión de Licencias --}}
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-plane-departure text-primary me-2"></i>Historial de Vacaciones y Licencias</h5>
+            <small class="text-muted">Registro completo de solicitudes y permisos otorgados al colaborador.</small>
+          </div>
+          @if($employee->status !== 'egresado')
+            <div class="d-flex gap-2">
+              <a href="{{ route('rrhh.leave-requests.create', ['employee_id' => $employee->id]) }}" class="btn btn-primary d-flex align-items-center gap-2">
+                <i class="fa-solid fa-calendar-plus"></i>
+                <span>Asignar Vacaciones / Licencia</span>
+              </a>
+              @if($vacationBalance)
+                <a href="{{ route('rrhh.leave-balances.show', $vacationBalance) }}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+                  <i class="fa-solid fa-sliders"></i>
+                  <span>Ajustar Saldo</span>
+                </a>
+              @endif
+            </div>
+          @endif
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive" style="min-height: 200px;">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-3">Tipo de Ausencia</th>
+                  <th>Período Solicitado</th>
+                  <th class="text-center">Días Computados</th>
+                  <th>Motivo / Justificación</th>
+                  <th class="text-center">Estado</th>
+                  <th class="text-end pe-3">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @forelse($leaveRequests as $req)
+                  <tr>
+                    <td class="ps-3">
+                      <span class="badge" style="background-color: {{ $req->leaveType->color ?? '#0d6efd' }}; color: #fff;">
+                        {{ $req->leaveType->name }}
+                      </span>
+                      @if($req->is_half_day)
+                        <span class="badge bg-secondary text-white small ms-1">Medio Día</span>
+                      @endif
+                    </td>
+                    <td>
+                      <div class="fw-semibold text-dark">
+                        <i class="fa-regular fa-calendar-days text-primary me-1"></i>
+                        {{ \Carbon\Carbon::parse($req->date_from)->format('d/m/Y') }}
+                        @if($req->date_from != $req->date_to)
+                          al {{ \Carbon\Carbon::parse($req->date_to)->format('d/m/Y') }}
+                        @endif
+                      </div>
+                    </td>
+                    <td class="text-center">
+                      <span class="badge bg-light text-dark border font-monospace fs-6">{{ $req->days_count }} días</span>
+                    </td>
+                    <td>
+                      <div class="small text-truncate" style="max-width: 250px;" title="{{ $req->reason }}">
+                        {{ $req->reason ?? '-' }}
+                      </div>
+                    </td>
+                    <td class="text-center">
+                      @switch($req->status)
+                        @case('pendiente_manager')
+                          <span class="badge bg-warning text-dark"><i class="fa-solid fa-user-clock me-1"></i>Pend. Responsable</span>
+                          @break
+                        @case('pendiente_rrhh')
+                        @case('pendiente')
+                        @case('pending')
+                          <span class="badge bg-warning text-dark"><i class="fa-solid fa-hourglass-half me-1"></i>Pendiente RRHH</span>
+                          @break
+                        @case('aprobada')
+                        @case('approved')
+                          <span class="badge bg-success"><i class="fa-solid fa-circle-check me-1"></i>Aprobada</span>
+                          @break
+                        @case('rechazada')
+                        @case('rejected')
+                          <span class="badge bg-danger"><i class="fa-solid fa-circle-xmark me-1"></i>Rechazada</span>
+                          @break
+                        @case('cancelada')
+                        @case('cancelled')
+                          <span class="badge bg-secondary"><i class="fa-solid fa-ban me-1"></i>Cancelada</span>
+                          @break
+                        @default
+                          <span class="badge bg-light text-dark border">{{ ucfirst($req->status) }}</span>
+                      @endswitch
+                    </td>
+                    <td class="text-end pe-3">
+                      <a href="{{ route('rrhh.leave-requests.show', $req) }}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                        <i class="fa-solid fa-eye me-1"></i>Ver
+                      </a>
+                    </td>
+                  </tr>
+                @empty
+                  <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">
+                      <i class="fa-regular fa-calendar-xmark fa-2x mb-2 d-block text-secondary opacity-50"></i>
+                      No se registran licencias ni vacaciones asignadas para este colaborador.
+                    </td>
+                  </tr>
+                @endforelse
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {{-- Resumen de Saldos por Tipo de Licencia --}}
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom py-3">
+          <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-scale-balanced text-primary me-2"></i>Saldos del Período {{ $currentYear }}</h6>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-3">Tipo de Ausencia</th>
+                  <th class="text-center">Asignados</th>
+                  <th class="text-center">Ajustes (+/-)</th>
+                  <th class="text-center">Gozados</th>
+                  <th class="text-center">Pendientes</th>
+                  <th class="text-center">Disponibles</th>
+                  <th class="text-end pe-3">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @foreach($leaveTypes as $lt)
+                  @php $b = $leaveBalances[$lt->id] ?? null; @endphp
+                  <tr>
+                    <td class="ps-3">
+                      <span class="badge" style="background-color: {{ $lt->color ?? '#0d6efd' }}; color: #fff;">{{ $lt->name }}</span>
+                    </td>
+                    <td class="text-center">{{ $b ? $b->total_granted : ($lt->days_allowed_per_year ?? 'Sin límite') }}d</td>
+                    <td class="text-center">{{ $b && $b->adjustment_days != 0 ? ($b->adjustment_days > 0 ? '+'.$b->adjustment_days : $b->adjustment_days).'d' : '-' }}</td>
+                    <td class="text-center text-danger">{{ $b ? $b->used_days : 0 }}d</td>
+                    <td class="text-center text-warning">{{ $b && $b->pending_days > 0 ? $b->pending_days.'d' : '-' }}</td>
+                    <td class="text-center">
+                      @if($b && $lt->deducts_from_balance)
+                        <span class="badge bg-{{ $b->available_days > 0 ? 'success' : 'secondary' }} fs-6">
+                          {{ $b->available_days }} días
+                        </span>
+                      @else
+                        <span class="text-muted small">No limita cupo</span>
+                      @endif
+                    </td>
+                    <td class="text-end pe-3">
+                      @if($b)
+                        <a href="{{ route('rrhh.leave-balances.show', $b) }}" class="btn btn-sm btn-outline-secondary">
+                          <i class="fa-solid fa-sliders me-1"></i>Detalle Saldo
+                        </a>
+                      @endif
+                    </td>
+                  </tr>
+                @endforeach
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

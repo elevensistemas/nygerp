@@ -55,6 +55,14 @@ use App\Http\Controllers\HR\HrPositionController;
 use App\Http\Controllers\HR\HrBranchController;
 use App\Http\Controllers\HR\HrAgreementController;
 use App\Http\Controllers\HR\HrEmployeeFileController;
+use App\Http\Controllers\HR\HrLeaveTypeController;
+use App\Http\Controllers\HR\HrLeavePolicyController;
+use App\Http\Controllers\HR\HrHolidayController;
+use App\Http\Controllers\HR\HrLeaveRequestController;
+use App\Http\Controllers\HR\HrLeaveBalanceController;
+use App\Http\Controllers\HR\HrCalendarController;
+use App\Http\Controllers\HR\HrManagerController;
+use App\Http\Controllers\HR\HrPortalController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 
@@ -345,6 +353,7 @@ Route::middleware(['auth', 'terms.accepted', 'transportista.restrict', 'readonly
     });
 
     // --- RECURSOS HUMANOS (RR. HH.) ---
+    // 1. Rutas Administrativas / RR. HH.
     Route::prefix('rrhh')
         ->name('rrhh.')
         ->middleware(['hr.access:admin'])
@@ -379,6 +388,67 @@ Route::middleware(['auth', 'terms.accepted', 'transportista.restrict', 'readonly
             Route::get('employees/{employee}/files/{file}/download', [HrEmployeeFileController::class, 'download'])->name('employees.files.download');
             Route::get('employees/{employee}/files/{file}/preview', [HrEmployeeFileController::class, 'preview'])->name('employees.files.preview');
             Route::post('employees/{employee}/files/{file}/void', [HrEmployeeFileController::class, 'voidFile'])->name('employees.files.void');
+
+            // --- FASE 3: TIPOS DE AUSENCIA, POLÍTICAS Y FERIADOS ---
+            Route::patch('leave-types/{leave_type}/toggle-status', [HrLeaveTypeController::class, 'toggleStatus'])->name('leave-types.toggle-status');
+            Route::resource('leave-types', HrLeaveTypeController::class)->except(['show']);
+
+            Route::resource('leave-policies', HrLeavePolicyController::class)->except(['show']);
+
+            Route::patch('holidays/{holiday}/toggle-status', [HrHolidayController::class, 'toggleStatus'])->name('holidays.toggle-status');
+            Route::resource('holidays', HrHolidayController::class)->except(['show']);
+
+            // --- FASE 3: SOLICITUDES DE LICENCIA / VACACIONES (ADMIN) ---
+            Route::get('leave-requests/reports', [HrLeaveRequestController::class, 'reports'])->name('leave-requests.reports');
+            Route::get('leave-requests/export-csv', [HrLeaveRequestController::class, 'exportCsv'])->name('leave-requests.export-csv');
+            Route::get('leave-requests/create', [HrLeaveRequestController::class, 'create'])->name('leave-requests.create');
+            Route::post('leave-requests/calculate-preview', [HrLeaveRequestController::class, 'calculatePreview'])->name('leave-requests.calculate-preview');
+            Route::post('leave-requests', [HrLeaveRequestController::class, 'store'])->name('leave-requests.store');
+            Route::get('leave-requests', [HrLeaveRequestController::class, 'index'])->name('leave-requests.index');
+            Route::get('leave-requests/{leave_request}', [HrLeaveRequestController::class, 'show'])->name('leave-requests.show');
+            Route::post('leave-requests/{leave_request}/approve', [HrLeaveRequestController::class, 'approve'])->name('leave-requests.approve');
+            Route::post('leave-requests/{leave_request}/reject', [HrLeaveRequestController::class, 'reject'])->name('leave-requests.reject');
+            Route::post('leave-requests/{leave_request}/cancel', [HrLeaveRequestController::class, 'cancel'])->name('leave-requests.cancel');
+            Route::get('leave-requests/{leave_request}/attachment', [HrLeaveRequestController::class, 'downloadAttachment'])->name('leave-requests.attachment');
+            Route::get('leave-requests/{leave_request}/attachment/preview', [HrLeaveRequestController::class, 'previewAttachment'])->name('leave-requests.attachment.preview');
+
+            // --- FASE 3: SALDOS Y AJUSTES MANUALES ---
+            Route::get('leave-balances', [HrLeaveBalanceController::class, 'index'])->name('leave-balances.index');
+            Route::get('leave-balances/{balance}', [HrLeaveBalanceController::class, 'show'])->name('leave-balances.show');
+            Route::post('leave-balances/{balance}/adjust', [HrLeaveBalanceController::class, 'adjust'])->name('leave-balances.adjust');
+
+            // --- FASE 3: CALENDARIO DE AUSENCIAS DE LA EMPRESA ---
+            Route::get('calendar', [HrCalendarController::class, 'index'])->name('calendar');
+        });
+
+    // 2. Rutas de Responsables / Managers
+    Route::prefix('rrhh/manager')
+        ->name('rrhh.manager.')
+        ->middleware(['hr.access:manager'])
+        ->group(function () {
+            Route::get('requests', [HrManagerController::class, 'teamRequests'])->name('requests');
+            Route::get('team-requests', [HrManagerController::class, 'teamRequests'])->name('team-requests');
+            Route::post('requests/{leave_request}/approve', [HrManagerController::class, 'approveRequest'])->name('requests.approve');
+            Route::post('requests/{leave_request}/reject', [HrManagerController::class, 'rejectRequest'])->name('requests.reject');
+            Route::get('calendar', [HrManagerController::class, 'teamCalendar'])->name('calendar');
+            Route::get('team-calendar', [HrManagerController::class, 'teamCalendar'])->name('team-calendar');
+        });
+
+    // 3. Portal de Autogestión del Colaborador (Empleado Activo)
+    Route::prefix('rrhh/portal')
+        ->name('rrhh.portal.')
+        ->middleware(['hr.access:employee'])
+        ->group(function () {
+            Route::get('/', [HrPortalController::class, 'dashboard'])->name('dashboard');
+            Route::get('requests', [HrPortalController::class, 'myRequests'])->name('requests');
+            Route::get('requests/create', [HrPortalController::class, 'createRequest'])->name('requests.create');
+            Route::post('requests/preview', [HrPortalController::class, 'calculatePreview'])->name('requests.preview');
+            Route::post('requests/calculate-preview', [HrPortalController::class, 'calculatePreview'])->name('requests.calculate-preview');
+            Route::post('requests', [HrPortalController::class, 'storeRequest'])->name('requests.store');
+            Route::post('requests/{leave_request}/cancel', [HrPortalController::class, 'cancelRequest'])->name('requests.cancel');
+            Route::get('requests/{leave_request}/attachment', [HrPortalController::class, 'downloadAttachment'])->name('requests.attachment');
+            Route::get('calendar', [HrPortalController::class, 'myCalendar'])->name('calendar');
+            Route::get('my-calendar', [HrPortalController::class, 'myCalendar'])->name('my-calendar');
         });
 });
 
