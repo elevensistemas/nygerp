@@ -240,6 +240,17 @@
                   </div>
 
                   <div class="col-md-3 col-6">
+                    <label for="vacation_seniority_date" class="form-label fw-semibold" title="Completar si difiere del ingreso legal por reconocimiento de antigüedad">
+                      Antigüedad p/ Vacaciones
+                      <i class="fa-solid fa-circle-info text-muted ms-1 small" data-bs-toggle="tooltip" title="Dejar en blanco si coincide con la Fecha de Ingreso"></i>
+                    </label>
+                    <input type="date" name="vacation_seniority_date" id="vacation_seniority_date" class="form-control @error('vacation_seniority_date') is-invalid @enderror" value="{{ old('vacation_seniority_date') }}">
+                    @error('vacation_seniority_date')
+                      <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                  </div>
+
+                  <div class="col-md-3 col-6">
                     <label for="status" class="form-label fw-semibold">Estado Inicial <span class="text-danger">*</span></label>
                     <select name="status" id="status" class="form-select @error('status') is-invalid @enderror" required>
                       <option value="activo" {{ old('status', 'activo') === 'activo' ? 'selected' : '' }}>Activo</option>
@@ -406,3 +417,28 @@
   </form>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var form = document.querySelector('form');
+    if (form) {
+      form.addEventListener('invalid', function (e) {
+        var invalidInput = e.target;
+        var tabPane = invalidInput.closest('.tab-pane');
+        if (tabPane && !tabPane.classList.contains('active')) {
+          var tabId = tabPane.getAttribute('id');
+          var tabTrigger = document.querySelector('[data-bs-target="#' + tabId + '"], [href="#' + tabId + '"]');
+          if (tabTrigger) {
+            var bsTab = new bootstrap.Tab(tabTrigger);
+            bsTab.show();
+            setTimeout(function() {
+              invalidInput.focus();
+            }, 150);
+          }
+        }
+      }, true);
+    }
+  });
+</script>
+@endpush

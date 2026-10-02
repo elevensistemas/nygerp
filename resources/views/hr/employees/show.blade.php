@@ -208,11 +208,17 @@
                   <span class="badge bg-secondary font-monospace">{{ $employee->file_number }}</span>
                 </div>
                 <div class="col-sm-6">
-                  <span class="text-muted small d-block">Fecha de Ingreso</span>
+                  <span class="text-muted small d-block">Fecha de Ingreso Legal</span>
                   <span class="fw-semibold text-dark">{{ $employee->hire_date ? $employee->hire_date->format('d/m/Y') : '-' }}</span>
                 </div>
                 <div class="col-sm-6">
-                  <span class="text-muted small d-block">Antigüedad en la Empresa</span>
+                  <span class="text-muted small d-block">Antigüedad p/ Vacaciones</span>
+                  <span class="fw-semibold text-dark">
+                    {{ $employee->vacation_seniority_date ? $employee->vacation_seniority_date->format('d/m/Y') : ($employee->hire_date ? $employee->hire_date->format('d/m/Y') . ' (Igual)' : '-') }}
+                  </span>
+                </div>
+                <div class="col-sm-6">
+                  <span class="text-muted small d-block">Antigüedad Computada</span>
                   <span class="fw-semibold text-primary">{{ $employee->seniority_formatted }}</span>
                 </div>
                 <div class="col-sm-6">

@@ -76,8 +76,22 @@
                   <div>{{ $branch->city ?? '-' }}</div>
                   <small class="text-muted">{{ $branch->province ?? '' }}</small>
                 </td>
-                <td>{{ $branch->phone ?? '<span class="text-muted small fst-italic">Sin teléfono</span>' }}</td>
-                <td>{{ $branch->manager_name ?? '<span class="text-muted small fst-italic">Sin asignar</span>' }}</td>
+                <td>
+                  @if($branch->phone)
+                    {{ $branch->phone }}
+                  @else
+                    <span class="text-muted small fst-italic">Sin teléfono</span>
+                  @endif
+                </td>
+                <td>
+                  @if($branch->manager)
+                    <div class="fw-semibold text-dark">{{ $branch->manager->full_name }}</div>
+                  @elseif($branch->manager_name)
+                    <div class="fw-semibold text-dark">{{ $branch->manager_name }}</div>
+                  @else
+                    <span class="text-muted small fst-italic">Sin asignar</span>
+                  @endif
+                </td>
                 <td class="text-center">
                   <span class="badge bg-light text-dark border">{{ $branch->employees_count }}</span>
                 </td>

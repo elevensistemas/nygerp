@@ -71,7 +71,13 @@
                     <div class="text-muted small">{{ Str::limit($department->description, 60) }}</div>
                   @endif
                 </td>
-                <td>{{ $department->parent ? $department->parent->name : '<span class="text-muted fst-italic">Principal</span>' }}</td>
+                <td>
+                  @if($department->parent)
+                    {{ $department->parent->name }}
+                  @else
+                    <span class="text-muted fst-italic">Principal</span>
+                  @endif
+                </td>
                 <td>
                   @if($department->manager)
                     <div class="d-flex align-items-center gap-2">

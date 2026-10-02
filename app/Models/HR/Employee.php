@@ -42,6 +42,7 @@ class Employee extends Model
         'manager_id',
         'agreement_id',
         'hire_date',
+        'vacation_seniority_date',
         'probation_end_date',
         'contract_type',
         'status',
@@ -57,6 +58,7 @@ class Employee extends Model
     protected $casts = [
         'birth_date' => 'date',
         'hire_date' => 'date',
+        'vacation_seniority_date' => 'date',
         'probation_end_date' => 'date',
         'termination_date' => 'date',
         'salary' => 'decimal:2',
@@ -128,19 +130,26 @@ class Employee extends Model
         return "{$this->last_name}, {$this->first_name}";
     }
 
+    public function getEffectiveVacationSeniorityDateAttribute()
+    {
+        return $this->vacation_seniority_date ?? $this->hire_date;
+    }
+
     public function getSeniorityYearsAttribute(): int
     {
-        if (!$this->hire_date) return 0;
+        $startDate = $this->effective_vacation_seniority_date;
+        if (!$startDate) return 0;
         $endDate = $this->termination_date ?? Carbon::now();
-        return (int) $this->hire_date->diffInYears($endDate);
+        return (int) $startDate->diffInYears($endDate);
     }
 
     public function getSeniorityFormattedAttribute(): string
     {
-        if (!$this->hire_date) return '-';
+        $startDate = $this->effective_vacation_seniority_date;
+        if (!$startDate) return '-';
         $endDate = $this->termination_date ?? Carbon::now();
-        $years = $this->hire_date->diffInYears($endDate);
-        $months = $this->hire_date->copy()->addYears($years)->diffInMonths($endDate);
+        $years = $startDate->diffInYears($endDate);
+        $months = $startDate->copy()->addYears($years)->diffInMonths($endDate);
         return "{$years} a, {$months} m";
     }
 

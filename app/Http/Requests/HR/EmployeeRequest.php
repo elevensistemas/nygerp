@@ -149,6 +149,7 @@ class EmployeeRequest extends FormRequest
                 },
             ],
             'hire_date' => ['required', 'date'],
+            'vacation_seniority_date' => ['nullable', 'date'],
             'probation_end_date' => ['nullable', 'date', 'after_or_equal:hire_date'],
             'contract_type' => ['nullable', 'in:indeterminado,plazo_fijo,pasantia,eventual,otro'],
             'status' => ['required', 'in:activo,licencia,suspendido,en_onboarding,egresado'],

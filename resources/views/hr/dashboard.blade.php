@@ -16,37 +16,28 @@
     box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
   }
   .hr-kpi-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.35rem;
+    font-size: 1.25rem;
+    background: rgba(15, 23, 42, 0.06);
+    color: #0f172a;
+    transition: all 0.2s ease;
   }
-  .hr-kpi-icon.mustard {
-    background: rgba(255, 193, 7, 0.18);
-    color: #b48100;
+  .hr-kpi-icon.brand-gold {
+    background: rgba(245, 158, 11, 0.14);
+    color: #b45309;
   }
-  .hr-kpi-icon.primary {
-    background: rgba(13, 110, 253, 0.12);
-    color: #0d6efd;
+  .hr-kpi-icon.brand-navy {
+    background: rgba(15, 23, 42, 0.08);
+    color: #0f172a;
   }
-  .hr-kpi-icon.success {
-    background: rgba(25, 135, 84, 0.12);
-    color: #198754;
-  }
-  .hr-kpi-icon.warning {
-    background: rgba(255, 193, 7, 0.15);
-    color: #d39e00;
-  }
-  .hr-kpi-icon.danger {
-    background: rgba(220, 53, 69, 0.12);
-    color: #dc3545;
-  }
-  .hr-kpi-icon.info {
-    background: rgba(13, 202, 240, 0.15);
-    color: #0aa2c0;
+  .hr-kpi-icon.brand-accent {
+    background: rgba(37, 99, 235, 0.1);
+    color: #1d4ed8;
   }
   .hr-empty-state {
     padding: 2.5rem 1rem;
@@ -116,7 +107,7 @@
               <span class="fw-semibold">{{ $stats['total_employees'] }}</span> registrados en total
             </div>
           </div>
-          <div class="hr-kpi-icon mustard">
+          <div class="hr-kpi-icon brand-gold">
             <i class="fa-solid fa-user-group"></i>
           </div>
         </div>
@@ -129,14 +120,14 @@
         <div class="d-flex align-items-center justify-content-between">
           <div>
             <div class="text-muted small fw-semibold text-uppercase">Ausencias Hoy</div>
-            <div class="h2 fw-bold mb-0 mt-1 {{ $stats['absent_today'] > 0 ? 'text-warning' : 'text-success' }}">
+            <div class="h2 fw-bold mb-0 mt-1 {{ $stats['absent_today'] > 0 ? 'text-warning' : 'text-dark' }}">
               {{ $stats['absent_today'] }}
             </div>
             <div class="text-muted small mt-1">
               Personas con licencia activa hoy
             </div>
           </div>
-          <div class="hr-kpi-icon {{ $stats['absent_today'] > 0 ? 'warning' : 'success' }}">
+          <div class="hr-kpi-icon brand-navy">
             <i class="fa-solid fa-calendar-xmark"></i>
           </div>
         </div>
@@ -149,14 +140,14 @@
         <div class="d-flex align-items-center justify-content-between">
           <div>
             <div class="text-muted small fw-semibold text-uppercase">Licencias Pendientes</div>
-            <div class="h2 fw-bold mb-0 mt-1 {{ $stats['pending_leaves'] > 0 ? 'text-danger' : 'text-muted' }}">
+            <div class="h2 fw-bold mb-0 mt-1 {{ $stats['pending_leaves'] > 0 ? 'text-dark' : 'text-muted' }}">
               {{ $stats['pending_leaves'] }}
             </div>
             <div class="text-muted small mt-1">
               Esperando revisión / aprobación
             </div>
           </div>
-          <div class="hr-kpi-icon {{ $stats['pending_leaves'] > 0 ? 'danger' : 'mustard' }}">
+          <div class="hr-kpi-icon brand-gold">
             <i class="fa-solid fa-clock-rotate-left"></i>
           </div>
         </div>
@@ -169,14 +160,14 @@
         <div class="d-flex align-items-center justify-content-between">
           <div>
             <div class="text-muted small fw-semibold text-uppercase">Firmas Pendientes</div>
-            <div class="h2 fw-bold mb-0 mt-1 {{ $stats['pending_documents'] > 0 ? 'text-primary' : 'text-muted' }}">
+            <div class="h2 fw-bold mb-0 mt-1 {{ $stats['pending_documents'] > 0 ? 'text-dark' : 'text-muted' }}">
               {{ $stats['pending_documents'] }}
             </div>
             <div class="text-muted small mt-1">
-              <span class="text-success fw-semibold">{{ $stats['signed_documents'] }}</span> firmados conforme
+              <span class="text-dark fw-semibold">{{ $stats['signed_documents'] }}</span> firmados conforme
             </div>
           </div>
-          <div class="hr-kpi-icon primary">
+          <div class="hr-kpi-icon brand-navy">
             <i class="fa-solid fa-file-signature"></i>
           </div>
         </div>
@@ -190,7 +181,7 @@
     <div class="col-md-4 col-12">
       <div class="card p-3 bg-light border-0">
         <div class="d-flex align-items-center gap-3">
-          <div class="hr-kpi-icon info">
+          <div class="hr-kpi-icon brand-navy">
             <i class="fa-solid fa-user-plus"></i>
           </div>
           <div>
@@ -203,7 +194,7 @@
     <div class="col-md-4 col-12">
       <div class="card p-3 bg-light border-0">
         <div class="d-flex align-items-center gap-3">
-          <div class="hr-kpi-icon mustard">
+          <div class="hr-kpi-icon brand-gold">
             <i class="fa-solid fa-sitemap"></i>
           </div>
           <div>
@@ -216,7 +207,7 @@
     <div class="col-md-4 col-12">
       <div class="card p-3 bg-light border-0">
         <div class="d-flex align-items-center gap-3">
-          <div class="hr-kpi-icon primary">
+          <div class="hr-kpi-icon brand-navy">
             <i class="fa-solid fa-briefcase"></i>
           </div>
           <div>

@@ -18,10 +18,15 @@ class HrLeaveCalculationService
     /**
      * Calcula los días computables para un rango de fechas según el tipo de ausencia y feriados.
      */
+    /**
+     * @param Carbon|string $dateFrom
+     * @param Carbon|string $dateTo
+     * @param LeaveType|bool|string $leaveTypeOrCountsAsWorking
+     */
     public function calculateDays(
-        Carbon|string $dateFrom,
-        Carbon|string $dateTo,
-        LeaveType|bool|string $leaveTypeOrCountsAsWorking = false,
+        $dateFrom,
+        $dateTo,
+        $leaveTypeOrCountsAsWorking = false,
         bool $isHalfDay = false,
         ?string $halfDayType = null,
         ?int $branchId = null
@@ -108,10 +113,15 @@ class HrLeaveCalculationService
      * Divide y calcula días computables agrupados por año / período calendario.
      * Útil para solicitudes que cruzan el 31 de diciembre.
      */
+    /**
+     * @param Carbon|string $dateFrom
+     * @param Carbon|string $dateTo
+     * @param LeaveType|bool|string $leaveTypeOrCountsAsWorking
+     */
     public function calculateDaysByPeriod(
-        Carbon|string $dateFrom,
-        Carbon|string $dateTo,
-        LeaveType|bool|string $leaveTypeOrCountsAsWorking = false,
+        $dateFrom,
+        $dateTo,
+        $leaveTypeOrCountsAsWorking = false,
         bool $isHalfDay = false,
         ?string $halfDayType = null,
         ?int $branchId = null
@@ -279,7 +289,7 @@ class HrLeaveCalculationService
             $balance = LeaveBalance::create([
                 'employee_id' => $employee->id,
                 'leave_type_id' => $leaveType->id,
-                'leave_policy_id' => $policy?->id,
+                'leave_policy_id' => optional($policy)->id,
                 'policy_snapshot' => $policySnapshot,
                 'period_year' => $year,
                 'assigned_days' => $assignedDays,
@@ -548,10 +558,15 @@ class HrLeaveCalculationService
     /**
      * Verifica superposiciones con solicitudes existentes respetando franjas de medio día.
      */
+    /**
+     * @param Employee|int $employee
+     * @param Carbon|string $dateFrom
+     * @param Carbon|string $dateTo
+     */
     public function findOverlap(
-        Employee|int $employee,
-        Carbon|string $dateFrom,
-        Carbon|string $dateTo,
+        $employee,
+        $dateFrom,
+        $dateTo,
         bool $isHalfDay = false,
         ?string $halfDayType = null,
         ?int $ignoreRequestId = null

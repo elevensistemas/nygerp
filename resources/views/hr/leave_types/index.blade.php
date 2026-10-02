@@ -100,16 +100,16 @@
                 </td>
                 <td class="text-center">
                   @if($type->counts_as_working_days)
-                    <span class="badge bg-info text-dark" title="Excluye fines de semana y feriados"><i class="fa-solid fa-business-time me-1"></i>Hábiles</span>
+                    <span class="badge bg-light text-dark border" title="Excluye fines de semana y feriados"><i class="fa-solid fa-business-time me-1 text-secondary"></i>Hábiles</span>
                   @else
-                    <span class="badge bg-secondary" title="Incluye sábados, domingos y feriados"><i class="fa-solid fa-calendar-days me-1"></i>Corridos</span>
+                    <span class="badge bg-light text-muted border" title="Incluye sábados, domingos y feriados"><i class="fa-solid fa-calendar-days me-1"></i>Corridos</span>
                   @endif
                 </td>
                 <td class="text-center">
                   @if($type->deducts_from_balance)
-                    <span class="badge bg-danger"><i class="fa-solid fa-minus me-1"></i>Sí</span>
+                    <span class="badge bg-dark text-white"><i class="fa-solid fa-minus me-1"></i>Sí</span>
                     @if($type->allows_negative_balance)
-                      <span class="badge bg-warning text-dark small" title="Permite saldo negativo"><i class="fa-solid fa-triangle-exclamation"></i> Neg.</span>
+                      <span class="badge bg-light text-dark border ms-1" title="Permite saldo negativo"><i class="fa-solid fa-triangle-exclamation text-warning me-1"></i>Neg.</span>
                     @endif
                   @else
                     <span class="badge bg-light text-muted border">No</span>
@@ -117,21 +117,21 @@
                 </td>
                 <td class="text-center">
                   @if($type->requires_approval)
-                    <span class="badge bg-primary">Requerida</span>
+                    <span class="badge bg-light text-dark border"><i class="fa-solid fa-user-check me-1 text-secondary"></i>Requerida</span>
                   @else
                     <span class="badge bg-light text-muted border">Directa</span>
                   @endif
                 </td>
                 <td class="text-center">
                   @if($type->requires_attachment)
-                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-paperclip me-1"></i>Obligatorio</span>
+                    <span class="badge bg-light text-dark border"><i class="fa-solid fa-paperclip me-1 text-secondary"></i>Obligatorio</span>
                   @else
                     <span class="badge bg-light text-muted border">Opcional</span>
                   @endif
                 </td>
                 <td class="text-center">
                   @if($type->allows_half_day)
-                    <span class="badge bg-success"><i class="fa-solid fa-circle-half-stroke me-1"></i>Permitido</span>
+                    <span class="badge bg-light text-dark border"><i class="fa-solid fa-circle-half-stroke me-1 text-secondary"></i>Permitido</span>
                   @else
                     <span class="badge bg-light text-muted border">No</span>
                   @endif

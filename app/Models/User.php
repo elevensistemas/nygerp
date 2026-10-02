@@ -181,12 +181,20 @@ class User extends Authenticatable
 
     public function hasHrEmployeeProfile(): bool
     {
-        return $this->hrEmployee !== null;
+        try {
+            return $this->hrEmployee !== null;
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     public function isActiveHrEmployee(): bool
     {
-        return $this->hasHrEmployeeProfile() && $this->hrEmployee->status === 'activo';
+        try {
+            return $this->hasHrEmployeeProfile() && $this->hrEmployee && $this->hrEmployee->status === 'activo';
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     public function isHrEmployee(): bool
@@ -196,7 +204,11 @@ class User extends Authenticatable
 
     public function isExEmployee(): bool
     {
-        return $this->hasHrEmployeeProfile() && $this->hrEmployee->status === 'egresado';
+        try {
+            return $this->hasHrEmployeeProfile() && $this->hrEmployee && $this->hrEmployee->status === 'egresado';
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     public function isHrManager(): bool
@@ -204,11 +216,15 @@ class User extends Authenticatable
         if ($this->isHrAdmin()) {
             return true;
         }
-        if (!$this->isActiveHrEmployee()) {
+        try {
+            if (!$this->isActiveHrEmployee()) {
+                return false;
+            }
+            $empId = $this->hrEmployee->id;
+            return \App\Models\HR\Department::where('manager_id', $empId)->where('is_active', true)->exists()
+                || \App\Models\HR\Employee::where('manager_id', $empId)->where('status', 'activo')->exists();
+        } catch (\Throwable $e) {
             return false;
         }
-        $empId = $this->hrEmployee->id;
-        return \App\Models\HR\Department::where('manager_id', $empId)->where('is_active', true)->exists()
-            || \App\Models\HR\Employee::where('manager_id', $empId)->where('status', 'activo')->exists();
     }
 }

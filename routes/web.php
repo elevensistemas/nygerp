@@ -492,4 +492,18 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
         return response(Artisan::output(), 200);
     })->middleware('throttle:2,1');
+
+    Route::get('/__seed', function (Request $request) {
+        $key = $request->input('key');
+        $expectedKey = env('MAINTENANCE_KEY', config('app.maintenance_key'));
+
+        if ($expectedKey && $key !== $expectedKey) {
+            abort(403, 'Forbidden');
+        }
+
+        Artisan::call('db:seed', ['--class' => 'HrSeeder', '--force' => true]);
+        Artisan::call('db:seed', ['--class' => 'HrPhase3Seeder', '--force' => true]);
+
+        return response("Seeders de Recursos Humanos (Tipos de licencia, Feriados, Políticas, Áreas, Puestos) ejecutados con éxito.\n\n" . Artisan::output(), 200);
+    })->middleware('throttle:2,1');
 });
