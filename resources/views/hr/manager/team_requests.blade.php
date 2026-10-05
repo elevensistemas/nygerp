@@ -12,7 +12,10 @@
       </nav>
       <h3 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-users-viewfinder text-primary me-2"></i>Solicitudes de Mi Equipo</h3>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <a href="{{ asset('manuales/instructivo_rrhh.pdf') }}" target="_blank" class="btn btn-outline-info d-inline-flex align-items-center justify-content-center shadow-sm" title="¿Cómo usar? Ver instructivo completo (PDF)" style="width: 38px; height: 38px; border-radius: 50%;">
+        <i class="fa-solid fa-circle-question fs-5"></i>
+      </a>
       <a href="{{ route('rrhh.manager.calendar') }}" class="btn btn-outline-primary d-flex align-items-center gap-2">
         <i class="fa-solid fa-calendar-days"></i>
         <span>Calendario del Equipo</span>

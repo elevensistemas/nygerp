@@ -15,7 +15,10 @@
       </h3>
       <p class="text-muted mb-0 small">Legajo: <strong>{{ $employee->file_number }}</strong> | Área: <strong>{{ $employee->department->name ?? 'General' }}</strong></p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <a href="{{ asset('manuales/instructivo_rrhh.pdf') }}" target="_blank" class="btn btn-outline-info d-inline-flex align-items-center justify-content-center shadow-sm" title="¿Cómo usar? Ver instructivo completo (PDF)" style="width: 38px; height: 38px; border-radius: 50%;">
+        <i class="fa-solid fa-circle-question fs-5"></i>
+      </a>
       <a href="{{ route('rrhh.portal.calendar') }}" class="btn btn-outline-primary d-flex align-items-center gap-2">
         <i class="fa-solid fa-calendar-days"></i>
         <span>Mi Calendario</span>

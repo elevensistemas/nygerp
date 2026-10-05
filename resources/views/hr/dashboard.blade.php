@@ -84,6 +84,9 @@
       <p class="text-muted small mb-0">Panel central de gestión de colaboradores, ausencias, legajos y documentación laboral.</p>
     </div>
     <div class="page-actions">
+      <a href="{{ asset('manuales/instructivo_rrhh.pdf') }}" target="_blank" class="btn btn-outline-info d-inline-flex align-items-center justify-content-center shadow-sm" title="¿Cómo usar? Ver instructivo completo (PDF)" style="width: 38px; height: 38px; border-radius: 50%;">
+        <i class="fa-solid fa-circle-question fs-5"></i>
+      </a>
       <button class="btn btn-outline-secondary btn-sm" onclick="window.location.reload();">
         <i class="fa-solid fa-arrows-rotate me-1"></i>Actualizar
       </button>

@@ -12,10 +12,15 @@
       </nav>
       <h3 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-id-card text-primary me-2"></i>Gestión de Colaboradores</h3>
     </div>
-    <a href="{{ route('rrhh.employees.create') }}" class="btn btn-primary d-flex align-items-center gap-2">
-      <i class="fa-solid fa-user-plus"></i>
-      <span>Nuevo Colaborador</span>
-    </a>
+    <div class="d-flex align-items-center gap-2">
+      <a href="{{ asset('manuales/instructivo_rrhh.pdf') }}" target="_blank" class="btn btn-outline-info d-inline-flex align-items-center justify-content-center shadow-sm" title="¿Cómo usar? Ver instructivo completo (PDF)" style="width: 38px; height: 38px; border-radius: 50%;">
+        <i class="fa-solid fa-circle-question fs-5"></i>
+      </a>
+      <a href="{{ route('rrhh.employees.create') }}" class="btn btn-primary d-flex align-items-center gap-2">
+        <i class="fa-solid fa-user-plus"></i>
+        <span>Nuevo Colaborador</span>
+      </a>
+    </div>
   </div>
 
   {{-- Filtros y Búsqueda --}}
