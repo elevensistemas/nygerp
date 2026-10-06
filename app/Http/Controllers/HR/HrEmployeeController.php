@@ -13,11 +13,13 @@ use App\Models\HR\LeaveType;
 use App\Models\HR\Position;
 use App\Models\User;
 use App\Services\HR\HrAuditService;
+use App\Services\HR\HrEmployeeExcelService;
 use App\Services\HR\HrLeaveCalculationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class HrEmployeeController extends Controller
 {
@@ -366,5 +368,60 @@ class HrEmployeeController extends Controller
 
         return redirect()->back()
             ->with('ok', "Usuario desvinculado del colaborador {$employee->full_name}.");
+    }
+
+    public function exportExcel(Request $request, HrEmployeeExcelService $excelService)
+    {
+        $mode = $request->input('mode', 'payroll'); // 'empty' o 'payroll'
+        $spreadsheet = $excelService->export($mode);
+
+        $filename = ($mode === 'empty')
+            ? 'plantilla_colaboradores_rrhh.xlsx'
+            : 'nomina_colaboradores_' . date('Y-m-d_H-i') . '.xlsx';
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
+
+    public function importPreview(Request $request, HrEmployeeExcelService $excelService)
+    {
+        $request->validate([
+            'excel_file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+        ], [
+            'excel_file.required' => 'Debe seleccionar un archivo Excel.',
+            'excel_file.mimes' => 'El archivo debe ser de formato .xlsx, .xls o .csv.',
+            'excel_file.max' => 'El archivo no puede superar los 10 MB.',
+        ]);
+
+        $preview = $excelService->preview($request->file('excel_file')->getRealPath());
+
+        return response()->json($preview);
+    }
+
+    public function importProcess(Request $request, HrEmployeeExcelService $excelService)
+    {
+        $request->validate([
+            'excel_file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+        ], [
+            'excel_file.required' => 'Debe seleccionar un archivo Excel.',
+            'excel_file.mimes' => 'El archivo debe ser de formato .xlsx, .xls o .csv.',
+        ]);
+
+        $result = $excelService->import($request->file('excel_file')->getRealPath());
+
+        if ($request->wantsJson()) {
+            return response()->json($result);
+        }
+
+        if (!$result['success']) {
+            return redirect()->back()->with('error', $result['message']);
+        }
+
+        return redirect()->route('rrhh.employees.index')->with('ok', $result['message']);
     }
 }

@@ -48,6 +48,8 @@ class EmployeeRequest extends FormRequest
             'nationality' => ['nullable', 'string', 'max:60'],
             'marital_status' => ['nullable', 'string', 'max:40'],
             'phone' => ['nullable', 'string', 'max:50'],
+            'personal_phone' => ['nullable', 'string', 'max:50'],
+            'work_phone' => ['nullable', 'string', 'max:50'],
             'personal_email' => ['nullable', 'email', 'max:150'],
             'work_email' => ['nullable', 'email', 'max:150'],
             'address' => ['nullable', 'string', 'max:255'],

@@ -143,15 +143,23 @@
               <div class="tab-pane fade" id="contact" role="tabpanel">
                 <h5 class="fw-bold text-dark mb-3">Datos de Contacto Directo</h5>
                 <div class="row g-3 mb-4">
-                  <div class="col-md-4 col-12">
-                    <label for="phone" class="form-label fw-semibold">Teléfono Celular</label>
-                    <input type="text" name="phone" id="phone" class="form-control @error('phone') is-invalid @enderror" value="{{ old('phone', $employee->phone) }}">
-                    @error('phone')
+                  <div class="col-md-3 col-12">
+                    <label for="personal_phone" class="form-label fw-semibold">Teléfono Personal</label>
+                    <input type="text" name="personal_phone" id="personal_phone" class="form-control @error('personal_phone') is-invalid @enderror" value="{{ old('personal_phone', $employee->personal_phone ?? $employee->phone) }}">
+                    @error('personal_phone')
                       <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                   </div>
 
-                  <div class="col-md-4 col-12">
+                  <div class="col-md-3 col-12">
+                    <label for="work_phone" class="form-label fw-semibold">Teléfono Laboral</label>
+                    <input type="text" name="work_phone" id="work_phone" class="form-control @error('work_phone') is-invalid @enderror" value="{{ old('work_phone', $employee->work_phone) }}">
+                    @error('work_phone')
+                      <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                  </div>
+
+                  <div class="col-md-3 col-12">
                     <label for="personal_email" class="form-label fw-semibold">Correo Personal</label>
                     <input type="email" name="personal_email" id="personal_email" class="form-control @error('personal_email') is-invalid @enderror" value="{{ old('personal_email', $employee->personal_email) }}">
                     @error('personal_email')
@@ -159,7 +167,7 @@
                     @enderror
                   </div>
 
-                  <div class="col-md-4 col-12">
+                  <div class="col-md-3 col-12">
                     <label for="work_email" class="form-label fw-semibold">Correo Corporativo</label>
                     <input type="email" name="work_email" id="work_email" class="form-control @error('work_email') is-invalid @enderror" value="{{ old('work_email', $employee->work_email) }}">
                     @error('work_email')

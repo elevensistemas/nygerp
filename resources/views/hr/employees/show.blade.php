@@ -153,8 +153,12 @@
               <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-address-book text-primary me-2"></i>Contacto y Domicilio</h6>
               <div class="row g-3">
                 <div class="col-sm-6">
-                  <span class="text-muted small d-block">Teléfono Celular</span>
-                  <span class="fw-semibold text-dark">{{ $employee->phone ?? '-' }}</span>
+                  <span class="text-muted small d-block">Teléfono Personal</span>
+                  <span class="fw-semibold text-dark">{{ $employee->personal_phone ?? $employee->phone ?? '-' }}</span>
+                </div>
+                <div class="col-sm-6">
+                  <span class="text-muted small d-block">Teléfono Laboral</span>
+                  <span class="fw-semibold text-dark">{{ $employee->work_phone ?? '-' }}</span>
                 </div>
                 <div class="col-sm-6">
                   <span class="text-muted small d-block">Correo Personal</span>
@@ -164,7 +168,7 @@
                   <span class="text-muted small d-block">Correo Corporativo</span>
                   <span class="fw-semibold text-dark">{{ $employee->work_email ?? '-' }}</span>
                 </div>
-                <div class="col-sm-6">
+                <div class="col-sm-12">
                   <span class="text-muted small d-block">Domicilio</span>
                   <span class="fw-semibold text-dark">
                     {{ $employee->address ?? '-' }}

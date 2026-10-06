@@ -378,6 +378,9 @@ Route::middleware(['auth', 'terms.accepted', 'transportista.restrict', 'readonly
             Route::resource('agreements', HrAgreementController::class)->except(['show']);
 
             // Empleados y Legajo Digital
+            Route::get('employees/export', [HrEmployeeController::class, 'exportExcel'])->name('employees.export');
+            Route::post('employees/import-preview', [HrEmployeeController::class, 'importPreview'])->name('employees.import-preview');
+            Route::post('employees/import', [HrEmployeeController::class, 'importProcess'])->name('employees.import');
             Route::post('employees/{employee}/status', [HrEmployeeController::class, 'updateStatus'])->name('employees.update-status');
             Route::post('employees/{employee}/terminate', [HrEmployeeController::class, 'terminate'])->name('employees.terminate');
             Route::post('employees/{employee}/unlink-user', [HrEmployeeController::class, 'unlinkUser'])->name('employees.unlink-user');

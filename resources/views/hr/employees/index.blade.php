@@ -16,7 +16,15 @@
       <a href="{{ asset('manuales/instructivo_rrhh.pdf') }}" target="_blank" class="btn btn-outline-info d-inline-flex align-items-center justify-content-center shadow-sm" title="¿Cómo usar? Ver instructivo completo (PDF)" style="width: 38px; height: 38px; border-radius: 50%;">
         <i class="fa-solid fa-circle-question fs-5"></i>
       </a>
-      <a href="{{ route('rrhh.employees.create') }}" class="btn btn-primary d-flex align-items-center gap-2">
+      <button type="button" class="btn btn-outline-success d-flex align-items-center gap-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#exportEmployeesModal" title="Descargar Excel con nómina o plantilla vacía">
+        <i class="fa-solid fa-download"></i>
+        <span>Descargar Excel</span>
+      </button>
+      <button type="button" class="btn btn-outline-primary d-flex align-items-center gap-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#importEmployeesModal" title="Importar o actualizar colaboradores desde Excel">
+        <i class="fa-solid fa-upload"></i>
+        <span>Cargar Excel</span>
+      </button>
+      <a href="{{ route('rrhh.employees.create') }}" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
         <i class="fa-solid fa-user-plus"></i>
         <span>Nuevo Colaborador</span>
       </a>
@@ -276,4 +284,295 @@
     @endif
   </div>
 </div>
+
+{{-- Modal Descargar Excel --}}
+<div class="modal fade" id="exportEmployeesModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <form method="GET" action="{{ route('rrhh.employees.export') }}">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title fw-bold"><i class="fa-solid fa-file-excel me-2"></i>Descargar Nómina de Colaboradores</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-start">
+          <p class="text-dark fw-semibold mb-3">Seleccione la modalidad de descarga:</p>
+
+          <div class="card border mb-3">
+            <div class="card-body py-3">
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="radio" name="mode" id="modePayroll" value="payroll" checked>
+                <label class="form-check-label fw-bold text-dark" for="modePayroll">
+                  <i class="fa-solid fa-users text-primary me-1"></i> Descargar con la nómina actual
+                </label>
+                <div class="text-muted small ms-4">
+                  Exporta el listado completo de colaboradores registrados con todos sus campos (datos personales, legajo, DNI, teléfonos personal y laboral, correos, etc.).
+                </div>
+              </div>
+
+              <hr class="my-2">
+
+              <div class="form-check mt-3">
+                <input class="form-check-input" type="radio" name="mode" id="modeEmpty" value="empty">
+                <label class="form-check-label fw-bold text-dark" for="modeEmpty">
+                  <i class="fa-solid fa-file-lines text-secondary me-1"></i> Descargar plantilla vacía
+                </label>
+                <div class="text-muted small ms-4">
+                  Descarga la estructura de columnas limpia con una fila de ejemplo para completado masivo.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success px-4">
+            <i class="fa-solid fa-download me-1"></i>Descargar Excel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{{-- Modal Cargar / Importar Excel --}}
+<div class="modal fade" id="importEmployeesModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content border-0 shadow">
+      <form id="importEmployeesForm" enctype="multipart/form-data">
+        @csrf
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-bold"><i class="fa-solid fa-file-import me-2"></i>Importación / Carga Masiva desde Excel</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-start">
+          <div class="alert alert-info border-0 shadow-sm d-flex align-items-center gap-3 mb-3">
+            <i class="fa-solid fa-circle-info fa-2x text-primary"></i>
+            <div>
+              <div class="fw-bold">Creación y Actualización Inteligente</div>
+              <small>El sistema actualizará los colaboradores existentes (coincidencia por Legajo o DNI) y creará nuevos colaboradores si no existen. Incluye todos los campos como Teléfono personal y laboral.</small>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="excel_file_input" class="form-label fw-semibold">Seleccionar archivo Excel (.xlsx, .xls, .csv) <span class="text-danger">*</span></label>
+            <input type="file" name="excel_file" id="excel_file_input" class="form-control" accept=".xlsx,.xls,.csv" required>
+            <small class="text-muted">Seleccione el archivo para generar la vista previa de importación automáticamente.</small>
+          </div>
+
+          {{-- Active Indicator / Spinner de Vista Previa --}}
+          <div id="previewSpinner" class="text-center py-5 d-none">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+              <span class="visually-hidden">Analizando...</span>
+            </div>
+            <p class="mt-3 mb-0 fw-bold text-dark">Analizando archivo Excel y cargando vista previa...</p>
+            <small class="text-muted">Por favor espere un momento.</small>
+          </div>
+
+          {{-- Vista Previa Container --}}
+          <div id="previewContainer" class="d-none mt-4">
+            <div class="row g-2 mb-3">
+              <div class="col-md-3 col-6">
+                <div class="card border-0 bg-light text-center p-2">
+                  <span class="text-muted small fw-semibold">Filas Analizadas</span>
+                  <h4 class="fw-bold text-dark mb-0" id="statTotalRows">0</h4>
+                </div>
+              </div>
+              <div class="col-md-3 col-6">
+                <div class="card border-0 bg-success-subtle text-center p-2">
+                  <span class="text-success small fw-semibold"><i class="fa-solid fa-user-plus me-1"></i>A Crear (Nuevos)</span>
+                  <h4 class="fw-bold text-success mb-0" id="statCreateCount">0</h4>
+                </div>
+              </div>
+              <div class="col-md-3 col-6">
+                <div class="card border-0 bg-info-subtle text-center p-2">
+                  <span class="text-info small fw-semibold"><i class="fa-solid fa-user-pen me-1"></i>A Actualizar</span>
+                  <h4 class="fw-bold text-info mb-0" id="statUpdateCount">0</h4>
+                </div>
+              </div>
+              <div class="col-md-3 col-6">
+                <div class="card border-0 bg-danger-subtle text-center p-2">
+                  <span class="text-danger small fw-semibold"><i class="fa-solid fa-triangle-exclamation me-1"></i>Observaciones</span>
+                  <h4 class="fw-bold text-danger mb-0" id="statErrorCount">0</h4>
+                </div>
+              </div>
+            </div>
+
+            <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-table me-2 text-primary"></i>Vista Previa de Registros:</h6>
+            <div class="table-responsive border rounded" style="max-height: 320px; overflow-y: auto;">
+              <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light sticky-top">
+                  <tr>
+                    <th class="text-center" style="width: 50px;">#</th>
+                    <th>Legajo</th>
+                    <th>DNI</th>
+                    <th>Nombre y Apellido</th>
+                    <th>Tel. Personal</th>
+                    <th>Tel. Laboral</th>
+                    <th class="text-center">Acción</th>
+                    <th class="text-center">Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="previewTableBody">
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {{-- Active Indicator / Spinner de Procesamiento --}}
+          <div id="importProcessSpinner" class="text-center py-5 d-none">
+            <div class="spinner-border text-success" style="width: 3.5rem; height: 3.5rem;" role="status">
+              <span class="visually-hidden">Procesando...</span>
+            </div>
+            <h5 class="mt-3 mb-1 fw-bold text-success">Procesando importación de nómina...</h5>
+            <p class="text-muted small mb-0">Guardando datos e integrando registros en la base de datos.</p>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" id="btnConfirmImport" class="btn btn-primary px-4" disabled>
+            <i class="fa-solid fa-cloud-arrow-up me-1"></i>Confirmar e Importar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 @endsection
+
+@push('scripts')
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const excelFileInput = document.getElementById('excel_file_input');
+    const previewSpinner = document.getElementById('previewSpinner');
+    const previewContainer = document.getElementById('previewContainer');
+    const importProcessSpinner = document.getElementById('importProcessSpinner');
+    const btnConfirmImport = document.getElementById('btnConfirmImport');
+    const importForm = document.getElementById('importEmployeesForm');
+
+    if (excelFileInput) {
+      excelFileInput.addEventListener('change', function () {
+        if (!this.files || !this.files[0]) return;
+
+        previewContainer.classList.add('d-none');
+        previewSpinner.classList.remove('d-none');
+        btnConfirmImport.disabled = true;
+
+        const formData = new FormData();
+        formData.append('excel_file', this.files[0]);
+        formData.append('_token', '{{ csrf_token() }}');
+
+        fetch('{{ route("rrhh.employees.import-preview") }}', {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+          body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+          previewSpinner.classList.add('d-none');
+          if (data.error) {
+            alert(data.error);
+            return;
+          }
+
+          renderPreview(data);
+          previewContainer.classList.remove('d-none');
+          if (data.total_rows > 0 && data.error_count < data.total_rows) {
+            btnConfirmImport.disabled = false;
+          }
+        })
+        .catch(err => {
+          previewSpinner.classList.add('d-none');
+          alert('Ocurrió un error al procesar la vista previa del archivo Excel.');
+          console.error(err);
+        });
+      });
+    }
+
+    if (importForm) {
+      importForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const fileInput = document.getElementById('excel_file_input');
+        if (!fileInput.files || !fileInput.files[0]) {
+          alert('Debe seleccionar un archivo Excel.');
+          return;
+        }
+
+        previewContainer.classList.add('d-none');
+        importProcessSpinner.classList.remove('d-none');
+        btnConfirmImport.disabled = true;
+
+        const formData = new FormData(importForm);
+
+        fetch('{{ route("rrhh.employees.import") }}', {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+          },
+          body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+          importProcessSpinner.classList.add('d-none');
+          if (data.success) {
+            alert(data.message);
+            window.location.reload();
+          } else {
+            alert(data.message || 'Error al ejecutar la importación.');
+            btnConfirmImport.disabled = false;
+            previewContainer.classList.remove('d-none');
+          }
+        })
+        .catch(err => {
+          importProcessSpinner.classList.add('d-none');
+          alert('Error en la comunicación con el servidor.');
+          btnConfirmImport.disabled = false;
+          console.error(err);
+        });
+      });
+    }
+
+    function renderPreview(data) {
+      document.getElementById('statTotalRows').textContent = data.total_rows;
+      document.getElementById('statCreateCount').textContent = data.create_count;
+      document.getElementById('statUpdateCount').textContent = data.update_count;
+      document.getElementById('statErrorCount').textContent = data.error_count;
+
+      const tbody = document.getElementById('previewTableBody');
+      tbody.innerHTML = '';
+
+      data.rows.forEach(r => {
+        const tr = document.createElement('tr');
+        if (r.status !== 'ok') {
+          tr.classList.add('table-danger');
+        }
+
+        const badgeAction = r.action === 'create'
+          ? '<span class="badge bg-success"><i class="fa-solid fa-user-plus me-1"></i>Crear</span>'
+          : '<span class="badge bg-info text-dark"><i class="fa-solid fa-user-pen me-1"></i>Actualizar</span>';
+
+        const badgeStatus = r.status === 'ok'
+          ? '<span class="badge bg-success-subtle text-success border border-success"><i class="fa-solid fa-check me-1"></i>Válido</span>'
+          : `<span class="badge bg-danger text-white"><i class="fa-solid fa-triangle-exclamation me-1"></i>${r.issues.join(', ')}</span>`;
+
+        tr.innerHTML = `
+          <td class="text-center font-monospace">${r.row_number}</td>
+          <td><span class="badge bg-secondary font-monospace">${r.file_number}</span></td>
+          <td class="fw-semibold">${r.dni}</td>
+          <td>${r.full_name}</td>
+          <td><small>${r.personal_phone || '-'}</small></td>
+          <td><small>${r.work_phone || '-'}</small></td>
+          <td class="text-center">${badgeAction}</td>
+          <td class="text-center">${badgeStatus}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  });
+</script>
+@endpush

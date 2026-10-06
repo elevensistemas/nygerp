@@ -27,6 +27,8 @@ class Employee extends Model
         'nationality',
         'marital_status',
         'phone',
+        'personal_phone',
+        'work_phone',
         'personal_email',
         'work_email',
         'address',
